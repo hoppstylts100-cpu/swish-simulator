@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Swish</title>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+:root{
+  --bg:#0E1622; --bg2:#12202B; --card:#17212F; --card2:#1B2635; --border:#28323F;
+  --blue:#2B7DE0; --blue-light:#5B9BE0; --text:#F1F5FA; --gray:#8892A2; --gray2:#5E6878;
+  --green:#4CAF50; --green-dark:#1E3A2E;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;}
+.app{width:100%;max-width:440px;height:100vh;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow-y:auto;overflow-x:hidden;background:var(--bg);}
+.screen.active{display:flex;}
+.swirl-svg{display:block;overflow:visible;}
+.app-logo {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+
+.receipt-logo {
+  width: 120x;
+  height: 120px;
+  object-fit: contain;
+  margin-left: 50px;
+}
+.spacer{flex:1;}
+
+/* HOME */
+.home-header{display:flex;align-items:center;gap:14px;padding:26px 22px 0;flex-shrink:0;}
+.home-divider{width:2px;height:44px;background:#2A3648;border-radius:2px;}
+.home-brand{display:flex;flex-direction:column;justify-content:center;}
+.home-brand .name{font-size:25px;font-weight:800;color:#fff;letter-spacing:-.5px;line-height:1.05;}
+.home-brand .bank{font-size:14px;color:var(--gray);font-weight:400;margin-top:1px;}
+.info-card{margin:34px 20px 0;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:16px;display:flex;align-items:center;gap:16px;cursor:pointer;}
+.info-icon-box{width:58px;height:58px;border-radius:16px;background:#0F1826;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.info-icon-box .circ{width:38px;height:38px;border-radius:50%;background:#2A3B52;display:flex;align-items:center;justify-content:center;color:var(--blue-light);font-weight:700;font-size:20px;font-style:italic;font-family:Georgia,serif;}
+.info-text .lbl{font-size:13px;font-weight:600;color:#7E93B0;letter-spacing:.5px;}
+.info-text .msg{font-size:21px;font-weight:600;color:#fff;line-height:1.25;margin-top:4px;}
+.home-actions{display:flex;gap:12px;padding:0 20px 14px;}
+.btn-primary{flex:1.7;background:var(--blue);color:#fff;border:none;padding:18px;border-radius:14px;font-size:19px;font-weight:600;cursor:pointer;}
+.btn-primary:active{background:#2569bd;}
+.btn-secondary{flex:1.2;background:var(--card);border:1px solid var(--border);color:var(--blue-light);border-radius:14px;font-size:19px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn-secondary:active{background:var(--card2);}
+.btn-secondary svg{width:26px;height:26px;fill:var(--blue-light);}
+.bottom-nav{margin:0 16px 16px;background:#121C29;border:1px solid var(--border);border-radius:28px;padding:8px;display:flex;justify-content:space-around;flex-shrink:0;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#B7BFCB;font-weight:500;padding:8px 12px;border-radius:20px;cursor:pointer;position:relative;}
+.nav-item svg{width:26px;height:26px;fill:#fff;stroke:none;}
+.nav-item.active{background:#2A3648;font-weight:700;}
+.badge{position:absolute;top:2px;right:8px;background:#E5484D;color:#fff;font-size:11px;font-weight:700;border-radius:9px;padding:1px 5px;}
+
+/* TOP BARS */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0;flex-shrink:0;position:relative;}
+.icon-circle{width:46px;height:46px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.icon-circle:active{background:var(--card2);}
+.icon-circle svg{width:24px;height:24px;fill:#fff;}
+.icon-circle.q{font-size:22px;font-weight:600;color:#fff;}
+.tabs{display:flex;gap:34px;position:absolute;left:50%;top:30px;transform:translateX(-50%);}
+.tab{font-size:19px;font-weight:600;color:#7C8697;cursor:pointer;padding-bottom:8px;position:relative;}
+.tab.active{color:#fff;}
+.tab.active::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:-6px;width:120%;height:3px;background:var(--blue-light);border-radius:3px;}
+
+/* FORM */
+.form-area{flex:1;padding:22px 20px;display:flex;flex-direction:column;gap:14px;}
+.field{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 18px;transition:border-color .15s;}
+.field.focus{border-color:#3C6FA8;}
+.field .f-label{font-size:15px;color:#7E8899;font-weight:400;margin-bottom:6px;}
+.field input{width:100%;background:transparent;border:none;outline:none;color:#fff;font-size:21px;font-weight:400;font-family:inherit;letter-spacing:.3px;}
+.field input::placeholder{color:#5E6878;}
+.recv-match{margin-top:10px;display:none;align-items:center;gap:10px;padding-top:12px;border-top:1px solid var(--border);}
+.recv-match.show{display:flex;}
+.recv-match .av{width:38px;height:38px;border-radius:50%;background:var(--green-dark);display:flex;align-items:center;justify-content:center;color:#5FC98A;font-weight:700;font-size:16px;flex-shrink:0;}
+.recv-match .nm{font-size:17px;color:#fff;font-weight:500;}
+.recv-match .sub{font-size:13px;color:#8B95A6;}
+.recv-match .ok{margin-left:auto;color:#5FC98A;font-size:14px;font-weight:600;}
+.mottagare-row{display:flex;justify-content:space-around;padding:6px 4px 4px;border-top:1px solid var(--border);margin-top:14px;padding-top:16px;}
+.mott-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;}
+.mott-circle{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#22334A;}
+.mott-circle.green{background:var(--green-dark);}
+.mott-circle svg{width:27px;height:27px;fill:#5B9BE0;}
+.mott-circle.green svg{fill:#5FC98A;}
+.mott-item span{font-size:14px;color:#D5DBE4;}
+.send-card-row{display:flex;align-items:center;gap:12px;padding:6px 4px;color:var(--blue-light);font-size:18px;font-weight:500;cursor:pointer;}
+.send-card-row svg{width:26px;height:26px;fill:var(--blue-light);}
+.btn-swisha{background:var(--blue);color:#fff;border:none;padding:18px;border-radius:14px;font-size:20px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:14px;position:relative;margin-top:auto;}
+.btn-swisha:active{background:#2569bd;}
+.btn-swisha .bankid{margin-left:auto;display:flex;align-items:center;}
+
+/* NUMBER */
+.number-input-card{margin:18px 20px 0;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 18px;display:flex;align-items:center;}
+.number-input-card .col{flex:1;}
+.number-input-card .f-label{font-size:15px;color:#7E8899;margin-bottom:4px;}
+#phoneInput{font-size:28px;color:#fff;background:transparent;border:none;outline:none;width:100%;font-weight:400;letter-spacing:.5px;}
+#phoneInput::placeholder{color:#5E6878;}
+.clear-btn{width:32px;height:32px;border-radius:50%;background:#3A4453;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.clear-btn svg{width:16px;height:16px;fill:#B7BFCB;}
+.forslag-h{padding:24px 22px 12px;font-size:20px;font-weight:700;color:#fff;border-bottom:1px solid var(--border);margin:0 20px;padding-left:2px;padding-right:2px;}
+.suggest-row{display:flex;align-items:center;gap:14px;padding:16px 22px;cursor:pointer;}
+.suggest-row:active{background:var(--card);}
+.suggest-avatar{width:52px;height:52px;border-radius:50%;background:var(--green-dark);display:flex;align-items:center;justify-content:center;color:#5FC98A;font-size:20px;font-weight:700;flex-shrink:0;}
+.suggest-name{font-size:19px;color:#fff;}
+.suggest-num{font-size:15px;color:#8B95A6;margin-top:2px;}
+.num-bottom{margin-top:auto;padding:14px 20px 0;display:flex;align-items:center;justify-content:space-between;}
+.kb-toggle{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:12px 20px;font-size:16px;color:#7E8899;cursor:pointer;}
+.kb-toggle b{color:#fff;font-weight:600;margin-right:14px;}
+.check-btn{width:52px;height:52px;border-radius:50%;background:var(--blue);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.check-btn svg{width:26px;height:26px;fill:#fff;}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 10px 20px;background:#0B131E;margin-top:14px;}
+.key{background:#1C2735;border:none;border-radius:9px;padding:10px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;}
+.key:active{background:#26313F;}
+.key .num{font-size:24px;color:#fff;font-weight:400;}
+.key .abc{font-size:10px;color:#8B95A6;letter-spacing:1.5px;}
+.key.wide{font-size:24px;color:#fff;justify-content:center;}
+
+/* SIGN */
+#signScreen{background:var(--bg2);}
+.sign-top{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;}
+.avbryt{background:#1B2A38;border:1px solid #2A3B4D;color:#fff;font-size:16px;font-weight:500;padding:10px 22px;border-radius:20px;cursor:pointer;}
+.sign-title{font-size:16px;font-weight:600;color:#fff;letter-spacing:2px;}
+.sign-body{padding:14px 22px;position:relative;}
+.sign-h1{font-size:20px;font-weight:600;color:#fff;letter-spacing:.5px;}
+.sign-p{font-size:18px;color:#E6EBF2;margin-top:8px;}
+.sign-strong{font-size:18px;font-weight:700;color:#fff;margin-top:4px;}
+.pen-circle{position:absolute;right:22px;top:20px;width:56px;height:56px;border-radius:50%;background:#1B2A38;display:flex;align-items:center;justify-content:center;}
+.pen-circle svg{width:28px;height:28px;fill:#fff;}
+.sign-card{margin:22px 20px;background:#16242F;border-left:4px solid #6FA8DC;border-radius:6px;padding:22px 20px;}
+.sign-card .rcpt{font-size:17px;color:#fff;}
+.sign-card .who{font-size:26px;font-weight:800;color:#fff;margin:14px 0 18px;line-height:1.15;}
+.sign-card hr{border:none;border-top:1px solid #33424F;margin:16px 0;}
+.sign-card .bel{font-size:17px;color:#9AA5B1;}
+.sign-card .amt{font-size:30px;font-weight:700;color:#fff;margin-top:6px;}
+.sign-card .disc{font-size:17px;color:#C4CDD6;line-height:1.4;}
+.touchid{background:#9CC3E0;color:#12202B;border:none;font-size:19px;font-weight:600;padding:20px;width:100%;cursor:pointer;margin-top:auto;}
+
+/* SUCCESS */
+#successScreen{background:var(--bg);}
+.success-top{background:linear-gradient(180deg,#A6CE3A 0%,#7FC241 42%,#4CAF50 100%);border-radius:0 0 50% 50% / 0 0 60px 60px;padding:70px 30px 100px;text-align:center;color:#fff;flex-shrink:0;position:relative;overflow:hidden;}
+.check-wrap{width:120px;height:120px;margin:0 auto 20px;position:relative;z-index:2;animation:pop .5s ease;}
+@keyframes pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.check-wrap svg{width:100%;height:100%;overflow:visible;}
+.success-title{font-size:26px;font-weight:600;position:relative;z-index:2;}
+.sparkle{position:absolute;border-radius:50%;background:rgba(255,255,255,.85);}
+.success-body{padding:26px 20px 0;text-align:center;display:flex;flex-direction:column;}
+.success-date{font-size:16px;color:#8B95A6;}
+.success-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;margin-top:18px;text-align:left;position:relative;}
+.success-card .who{font-size:24px;font-weight:600;color:#fff;}
+.success-card .num{font-size:16px;color:#8B95A6;margin-top:4px;}
+.success-card .amt{font-size:34px;font-weight:500;color:#fff;margin-top:16px;}
+.success-card .dots{position:absolute;right:20px;bottom:22px;color:#8B95A6;font-size:24px;letter-spacing:2px;}
+.success-msg{font-size:17px;color:#C4CDD6;margin-top:22px;}
+.success-footer{margin-top:auto;padding:24px 24px 28px;display:flex;align-items:center;justify-content:space-between;position:relative;}
+.success-footer .swish-logo{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:7px;}
+.success-footer .word{font-size:26px;font-weight:600;color:#fff;letter-spacing:-.6px;}
+.success-footer .reg{font-size:9px;color:#8B95A6;align-self:flex-start;margin-top:6px;}
+.x-circle{width:58px;height:58px;border-radius:50%;background:#1E2B3B;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto;}
+.x-circle svg{width:26px;height:26px;fill:#fff;}
+.glitter{position:absolute;border-radius:50%;pointer-events:none;animation:glit .9s ease-out forwards;z-index:30;}
+@keyframes glit{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0);opacity:0}}
+
+/* SCAN */
+.scan-area{flex:1;background:#000;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:16px 0 0;}
+#scanVideo{width:100%;height:100%;object-fit:cover;}
+.scan-frame{position:absolute;width:240px;height:240px;border-radius:24px;box-shadow:0 0 0 3000px rgba(0,0,0,.45);}
+.scan-frame::before,.scan-frame::after{content:'';position:absolute;width:34px;height:34px;border:4px solid #5FC98A;border-radius:6px;}
+.scan-frame::before{top:-2px;left:-2px;border-right:none;border-bottom:none;}
+.scan-frame::after{bottom:-2px;right:-2px;border-left:none;border-top:none;}
+.scan-line{position:absolute;left:0;right:0;height:3px;background:#5FC98A;box-shadow:0 0 12px #5FC98A;animation:scanmove 2s ease-in-out infinite;}
+@keyframes scanmove{0%{top:0}50%{top:100%}100%{top:0}}
+.scan-hint{position:absolute;bottom:36px;left:0;right:0;text-align:center;color:#fff;font-size:15px;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,.6);}
+.btn-simulate{position:absolute;bottom:82px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);color:#12202B;border:none;padding:11px 24px;border-radius:22px;font-size:14px;font-weight:700;cursor:pointer;}
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Swish</title>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+:root{
+  --bg:#0E1622; --bg2:#12202B; --card:#17212F; --card2:#1B2635; --border:#28323F;
+  --blue:#2B7DE0; --blue-light:#5B9BE0; --text:#F1F5FA; --gray:#8892A2; --gray2:#5E6878;
+  --green:#4CAF50; --green-dark:#1E3A2E;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;}
+.app{width:100%;max-width:440px;height:100vh;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow-y:auto;overflow-x:hidden;background:var(--bg);}
+.screen.active{display:flex;}
+.swirl-svg{display:block;overflow:visible;}
+.app-logo {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.receipt-logo {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+    display: block;
+    margin: 20px auto 0;
+    flex-shrink: 0;
+}
+.spacer{flex:1;}
+
+/* HOME */
+.home-header{display:flex;align-items:center;gap:14px;padding:26px 22px 0;flex-shrink:0;}
+.home-divider{width:2px;height:44px;background:#2A3648;border-radius:2px;}
+.home-brand{display:flex;flex-direction:column;justify-content:center;}
+.home-brand .name{font-size:25px;font-weight:800;color:#fff;letter-spacing:-.5px;line-height:1.05;}
+.home-brand .bank{font-size:14px;color:var(--gray);font-weight:400;margin-top:1px;}
+.info-card{margin:34px 20px 0;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:16px;display:flex;align-items:center;gap:16px;cursor:pointer;}
+.info-icon-box{width:58px;height:58px;border-radius:16px;background:#0F1826;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.info-icon-box .circ{width:38px;height:38px;border-radius:50%;background:#2A3B52;display:flex;align-items:center;justify-content:center;color:var(--blue-light);font-weight:700;font-size:20px;font-style:italic;font-family:Georgia,serif;}
+.info-text .lbl{font-size:13px;font-weight:600;color:#7E93B0;letter-spacing:.5px;}
+.info-text .msg{font-size:21px;font-weight:600;color:#fff;line-height:1.25;margin-top:4px;}
+.home-actions{display:flex;gap:12px;padding:0 20px 14px;}
+.btn-primary{flex:1.7;background:var(--blue);color:#fff;border:none;padding:18px;border-radius:14px;font-size:19px;font-weight:600;cursor:pointer;}
+.btn-primary:active{background:#2569bd;}
+.btn-secondary{flex:1.2;background:var(--card);border:1px solid var(--border);color:var(--blue-light);border-radius:14px;font-size:19px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn-secondary:active{background:var(--card2);}
+.btn-secondary svg{width:26px;height:26px;fill:var(--blue-light);}
+.bottom-nav{margin:0 16px 16px;background:#121C29;border:1px solid var(--border);border-radius:28px;padding:8px;display:flex;justify-content:space-around;flex-shrink:0;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#B7BFCB;font-weight:500;padding:8px 12px;border-radius:20px;cursor:pointer;position:relative;}
+.nav-item svg{width:26px;height:26px;fill:#fff;stroke:none;}
+.nav-item.active{background:#2A3648;font-weight:700;}
+.badge{position:absolute;top:2px;right:8px;background:#E5484D;color:#fff;font-size:11px;font-weight:700;border-radius:9px;padding:1px 5px;}
+
+/* TOP BARS */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0;flex-shrink:0;position:relative;}
+.icon-circle{width:46px;height:46px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.icon-circle:active{background:var(--card2);}
+.icon-circle svg{width:24px;height:24px;fill:#fff;}
+.icon-circle.q{font-size:22px;font-weight:600;color:#fff;}
+.tabs{display:flex;gap:34px;position:absolute;left:50%;top:30px;transform:translateX(-50%);}
+.tab{font-size:19px;font-weight:600;color:#7C8697;cursor:pointer;padding-bottom:8px;position:relative;}
+.tab.active{color:#fff;}
+.tab.active::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:-6px;width:120%;height:3px;background:var(--blue-light);border-radius:3px;}
+
+/* FORM */
+.form-area{flex:1;padding:22px 20px;display:flex;flex-direction:column;gap:14px;}
+.field{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 18px;transition:border-color .15s;}
+.field.focus{border-color:#3C6FA8;}
+.field .f-label{font-size:15px;color:#7E8899;font-weight:400;margin-bottom:6px;}
+.field input{width:100%;background:transparent;border:none;outline:none;color:#fff;font-size:21px;font-weight:400;font-family:inherit;letter-spacing:.3px;}
+.field input::placeholder{color:#5E6878;}
+.recv-match{margin-top:10px;display:none;align-items:center;gap:10px;padding-top:12px;border-top:1px solid var(--border);}
+.recv-match.show{display:flex;}
+.recv-match .av{width:38px;height:38px;border-radius:50%;background:var(--green-dark);display:flex;align-items:center;justify-content:center;color:#5FC98A;font-weight:700;font-size:16px;flex-shrink:0;}
+.recv-match .nm{font-size:17px;color:#fff;font-weight:500;}
+.recv-match .sub{font-size:13px;color:#8B95A6;}
+.recv-match .ok{margin-left:auto;color:#5FC98A;font-size:14px;font-weight:600;}
+.mottagare-row{display:flex;justify-content:space-around;padding:6px 4px 4px;border-top:1px solid var(--border);margin-top:14px;padding-top:16px;}
+.mott-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;}
+.mott-circle{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#22334A;}
+.mott-circle.green{background:var(--green-dark);}
+.mott-circle svg{width:27px;height:27px;fill:#5B9BE0;}
+.mott-circle.green svg{fill:#5FC98A;}
+.mott-item span{font-size:14px;color:#D5DBE4;}
+.send-card-row{display:flex;align-items:center;gap:12px;padding:6px 4px;color:var(--blue-light);font-size:18px;font-weight:500;cursor:pointer;}
+.send-card-row svg{width:26px;height:26px;fill:var(--blue-light);}
+.btn-swisha{background:var(--blue);color:#fff;border:none;padding:18px;border-radius:14px;font-size:20px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:14px;position:relative;margin-top:auto;}
+.btn-swisha:active{background:#2569bd;}
+.btn-swisha .bankid{margin-left:auto;display:flex;align-items:center;}
+
+/* NUMBER */
+.number-input-card{margin:18px 20px 0;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 18px;display:flex;align-items:center;}
+.number-input-card .col{flex:1;}
+.number-input-card .f-label{font-size:15px;color:#7E8899;margin-bottom:4px;}
+#phoneInput{font-size:28px;color:#fff;background:transparent;border:none;outline:none;width:100%;font-weight:400;letter-spacing:.5px;}
+#phoneInput::placeholder{color:#5E6878;}
+.clear-btn{width:32px;height:32px;border-radius:50%;background:#3A4453;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.clear-btn svg{width:16px;height:16px;fill:#B7BFCB;}
+.forslag-h{padding:24px 22px 12px;font-size:20px;font-weight:700;color:#fff;border-bottom:1px solid var(--border);margin:0 20px;padding-left:2px;padding-right:2px;}
+.suggest-row{display:flex;align-items:center;gap:14px;padding:16px 22px;cursor:pointer;}
+.suggest-row:active{background:var(--card);}
+.suggest-avatar{width:52px;height:52px;border-radius:50%;background:var(--green-dark);display:flex;align-items:center;justify-content:center;color:#5FC98A;font-size:20px;font-weight:700;flex-shrink:0;}
+.suggest-name{font-size:19px;color:#fff;}
+.suggest-num{font-size:15px;color:#8B95A6;margin-top:2px;}
+.num-bottom{margin-top:auto;padding:14px 20px 0;display:flex;align-items:center;justify-content:space-between;}
+.kb-toggle{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:12px 20px;font-size:16px;color:#7E8899;cursor:pointer;}
+.kb-toggle b{color:#fff;font-weight:600;margin-right:14px;}
+.check-btn{width:52px;height:52px;border-radius:50%;background:var(--blue);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.check-btn svg{width:26px;height:26px;fill:#fff;}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 10px 20px;background:#0B131E;margin-top:14px;}
+.key{background:#1C2735;border:none;border-radius:9px;padding:10px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;}
+.key:active{background:#26313F;}
+.key .num{font-size:24px;color:#fff;font-weight:400;}
+.key .abc{font-size:10px;color:#8B95A6;letter-spacing:1.5px;}
+.key.wide{font-size:24px;color:#fff;justify-content:center;}
+
+/* SIGN */
+#signScreen{background:var(--bg2);}
+.sign-top{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;}
+.avbryt{background:#1B2A38;border:1px solid #2A3B4D;color:#fff;font-size:16px;font-weight:500;padding:10px 22px;border-radius:20px;cursor:pointer;}
+.sign-title{font-size:16px;font-weight:600;color:#fff;letter-spacing:2px;}
+.sign-body{padding:14px 22px;position:relative;}
+.sign-h1{font-size:20px;font-weight:600;color:#fff;letter-spacing:.5px;}
+.sign-p{font-size:18px;color:#E6EBF2;margin-top:8px;}
+.sign-strong{font-size:18px;font-weight:700;color:#fff;margin-top:4px;}
+.pen-circle{position:absolute;right:22px;top:20px;width:56px;height:56px;border-radius:50%;background:#1B2A38;display:flex;align-items:center;justify-content:center;}
+.pen-circle svg{width:28px;height:28px;fill:#fff;}
+.sign-card{margin:22px 20px;background:#16242F;border-left:4px solid #6FA8DC;border-radius:6px;padding:22px 20px;}
+.sign-card .rcpt{font-size:17px;color:#fff;}
+.sign-card .who{font-size:26px;font-weight:800;color:#fff;margin:14px 0 18px;line-height:1.15;}
+.sign-card hr{border:none;border-top:1px solid #33424F;margin:16px 0;}
+.sign-card .bel{font-size:17px;color:#9AA5B1;}
+.sign-card .amt{font-size:30px;font-weight:700;color:#fff;margin-top:6px;}
+.sign-card .disc{font-size:17px;color:#C4CDD6;line-height:1.4;}
+.touchid{background:#9CC3E0;color:#12202B;border:none;font-size:19px;font-weight:600;padding:20px;width:100%;cursor:pointer;margin-top:auto;}
+
+/* SUCCESS */
+#successScreen{background:var(--bg);}
+.success-top{background:linear-gradient(180deg,#A6CE3A 0%,#7FC241 42%,#4CAF50 100%);border-radius:0 0 50% 50% / 0 0 60px 60px;padding:70px 30px 100px;text-align:center;color:#fff;flex-shrink:0;position:relative;overflow:hidden;}
+.check-wrap{width:120px;height:120px;margin:0 auto 20px;position:relative;z-index:2;animation:pop .5s ease;}
+@keyframes pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.check-wrap svg{width:100%;height:100%;overflow:visible;}
+.success-title{font-size:26px;font-weight:600;position:relative;z-index:2;}
+.sparkle{position:absolute;border-radius:50%;background:rgba(255,255,255,.85);}
+.success-body{padding:26px 20px 0;text-align:center;display:flex;flex-direction:column;}
+.success-date{font-size:16px;color:#8B95A6;}
+.success-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;margin-top:18px;text-align:left;position:relative;}
+.success-card .who{font-size:24px;font-weight:600;color:#fff;}
+.success-card .num{font-size:16px;color:#8B95A6;margin-top:4px;}
+.success-card .amt{font-size:34px;font-weight:500;color:#fff;margin-top:16px;}
+.success-card .dots{position:absolute;right:20px;bottom:22px;color:#8B95A6;font-size:24px;letter-spacing:2px;}
+.success-msg{font-size:17px;color:#C4CDD6;margin-top:22px;}
+.success-footer{margin-top:auto;padding:24px 24px 28px;display:flex;align-items:center;justify-content:space-between;position:relative;}
+.success-footer .swish-logo{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:7px;}
+.success-footer .word{font-size:26px;font-weight:600;color:#fff;letter-spacing:-.6px;}
+.success-footer .reg{font-size:9px;color:#8B95A6;align-self:flex-start;margin-top:6px;}
+.x-circle{width:58px;height:58px;border-radius:50%;background:#1E2B3B;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto;}
+.x-circle svg{width:26px;height:26px;fill:#fff;}
+.glitter{position:absolute;border-radius:50%;pointer-events:none;animation:glit .9s ease-out forwards;z-index:30;}
+@keyframes glit{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0);opacity:0}}
+
+/* SCAN */
+.scan-area{flex:1;background:#000;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:16px 0 0;}
+#scanVideo{width:100%;height:100%;object-fit:cover;}
+.scan-frame{position:absolute;width:240px;height:240px;border-radius:24px;box-shadow:0 0 0 3000px rgba(0,0,0,.45);}
+.scan-frame::before,.scan-frame::after{content:'';position:absolute;width:34px;height:34px;border:4px solid #5FC98A;border-radius:6px;}
+.scan-frame::before{top:-2px;left:-2px;border-right:none;border-bottom:none;}
+.scan-frame::after{bottom:-2px;right:-2px;border-left:none;border-top:none;}
+.scan-line{position:absolute;left:0;right:0;height:3px;background:#5FC98A;box-shadow:0 0 12px #5FC98A;animation:scanmove 2s ease-in-out infinite;}
+@keyframes scanmove{0%{top:0}50%{top:100%}100%{top:0}}
+.scan-hint{position:absolute;bottom:36px;left:0;right:0;text-align:center;color:#fff;font-size:15px;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,.6);}
+.btn-simulate{position:absolute;bottom:82px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);color:#12202B;border:none;padding:11px 24px;border-radius:22px;font-size:14px;font-weight:700;cursor:pointer;}
+.success-top {
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- HOME -->
+  <section class="screen active" id="homeScreen">
+    <div class="home-header">
+      <img src="swishlogga1.png" alt="Logga" class="app-logo">
+      <div class="home-divider"></div>
+      <div class="home-brand"><span class="name">Swish</span><span class="bank">Swedbank</span></div>
+    </div>
+    <div class="info-card">
+      <div class="info-icon-box"><div class="circ">i</div></div>
+      <div class="info-text"><div class="lbl">INFORMATION</div><div class="msg">Dags att förnya<br>ditt medgivande</div></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="home-actions">
+      <button class="btn-primary" onclick="go('swishaScreen')">Swisha</button>
+      <button class="btn-secondary" onclick="startScan()">Skanna <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 19h2v2h-2zm-6 0h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm-4 0h2v2h-2zm-4 4h2v2h-2zm2-2h2v2h-2zm2 4h2v2h-2z"/></svg></button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="setNav(this)"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Hem</div>
+      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20z"/></svg>Tillsammans</div>
+      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2" stroke-linecap="round"/></svg><span class="badge">19</span>Historik</div>
+      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 19c.7-3 3.3-5 6.5-5s5.8 2 6.5 5" stroke-linecap="round"/></svg>Profil</div>
+    </div>
+  </section>
+
+  <!-- SWISHA FORM (redigerbar) -->
+  <section class="screen" id="swishaScreen">
+    <div class="top-bar">
+      <div class="icon-circle" onclick="go('homeScreen')"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg></div>
+      <div class="tabs"><span class="tab active" onclick="setTab(this)">Swisha</span><span class="tab" onclick="setTab(this)">Be om</span></div>
+      <div class="icon-circle q">?</div>
+    </div>
+    <div class="form-area">
+      <div class="field" id="recvField">
+        <div class="f-label">Mottagare</div>
+        <input id="recvInput" inputmode="numeric" placeholder="Mobilnummer" oninput="onRecvInput()" onfocus="recvField.classList.add('focus')" onblur="recvField.classList.remove('focus')">
+        <div class="recv-match" id="recvMatch">
+          <div class="av" id="recvAv">M</div>
+          <div><div class="nm" id="recvName">—</div><div class="sub" id="recvSub">—</div></div>
+          <div class="ok">✓</div>
+        </div>
+        <div class="mottagare-row">
+          <div class="mott-item" onclick="focusRecv()"><div class="mott-circle"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-7 2.2-7 4.5V20h14v-1.5C19 16.2 16 14 12 14z"/></svg></div><span>Kontakter</span></div>
+          <div class="mott-item" onclick="focusRecv()"><div class="mott-circle"><svg viewBox="0 0 24 24" fill="none" stroke="#5B9BE0" stroke-width="2"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20z"/></svg></div><span>Favoriter</span></div>
+          <div class="mott-item" onclick="startScan()"><div class="mott-circle green"><svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 19h2v2h-2zm-6 0h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm-4 0h2v2h-2zm-4 4h2v2h-2zm2-2h2v2h-2zm2 4h2v2h-2z"/></svg></div><span>Skanna QR</span></div>
+        </div>
+      </div>
+      <div class="field" id="beloppField">
+        <div class="f-label">Belopp</div>
+        <input id="beloppInput" inputmode="decimal" placeholder="0 kr" oninput="onBelopp()" onfocus="beloppField.classList.add('focus')" onblur="beloppField.classList.remove('focus')">
+      </div>
+      <div class="field" id="msgField">
+        <div class="f-label">Meddelande</div>
+        <input id="msgInput" placeholder="Lägg till meddelande" oninput="onMsg()" onfocus="msgField.classList.add('focus')" onblur="msgField.classList.remove('focus')">
+      </div>
+      <div class="send-card-row" onclick="toggleCard(this)"><svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>Skicka med ett kort</div>
+      <button class="btn-swisha" onclick="goSign()">Swisha <span class="bankid"><svg width="58" height="26" viewBox="0 0 58 26"><text x="0" y="17" fill="#fff" font-size="15" font-weight="700" font-style="italic" font-family="Inter">iD</text><text x="20" y="24" fill="#fff" font-size="8" font-weight="600" font-family="Inter">BankID</text></svg></span></button>
+    </div>
+  </section>
+
+  <!-- SIGN -->
+  <section class="screen" id="signScreen">
+    <div class="sign-top">
+      <button class="avbryt" onclick="go('swishaScreen')">Avbryt</button>
+      <div class="sign-title">UNDERSKRIFT</div>
+      <svg width="52" height="26" viewBox="0 0 52 26"><text x="0" y="17" fill="#fff" font-size="16" font-weight="700" font-style="italic" font-family="Inter">iD</text><text x="18" y="24" fill="#fff" font-size="8" font-weight="600" font-family="Inter">BankID</text></svg>
+    </div>
+    <div class="sign-body">
+      <div class="sign-h1">ASTOR HALLÉN SEKANDER</div>
+      <div class="sign-p">Jag skriver under hos:</div>
+      <div class="sign-strong">Swedbank och Sparbankerna<br>avseende Swish</div>
+      <div class="pen-circle"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></div>
+    </div>
+    <div class="sign-card">
+      <div class="rcpt" id="signRcpt">Mottagare: +46 76 876 25 22</div>
+      <div class="who" id="signWho">MELKER LINDSTRÖM RÖST</div>
+      <hr>
+      <div class="bel">Belopp:</div>
+      <div class="amt" id="signAmt">1 kr</div>
+      <hr>
+      <div class="disc">Tänk på att aldrig betala eller överföra pengar på någon annans uppmaning. Avbryt signeringen och kontakta din bank om du känner dig osäker.</div>
+    </div>
+    <button class="touchid" onclick="completePayment()">Skriv under med Touch ID</button>
+  </section>
+
+  <!-- SUCCESS -->
+  <section class="screen" id="successScreen" onclick="onSuccessTap(event)">
+    <div class="success-top">
+      <div class="check-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="53" r="30" fill="none" stroke="#ffffff" stroke-width="3.0" opacity=".50"/>
+          <path d="M31 55 L45 71 L80 27" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="success-title">Din betalning är skickad!</div>
+    </div>
+    <div class="success-body">
+      <div class="success-date" id="successDate">9 okt. 2026, kl 17:19</div>
+      <div class="success-card">
+        <div class="who" id="successWho">Melker Lindström Röst</div>
+        <div class="num" id="successNum">+46 76 876 25 22</div>
+        <div class="amt" id="successAmt">1 kr</div>
+        <div class="dots">•••</div>
+      </div>
+      <div class="success-msg" id="successMsg">Pengar för maten</div>
+    </div>
+    <div class="success-footer">
+      <img src="swishlogga2.png" class="receipt-logo" alt="Logga">
+      <button class="x-circle" onclick="go('homeScreen')"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg></button>
+    </div>
+  </section>
+
+  <!-- SCAN -->
+  <section class="screen" id="scanScreen">
+    <div class="top-bar" style="justify-content:flex-start;padding-bottom:4px;">
+      <div class="icon-circle" onclick="stopScan();go('homeScreen')"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg></div>
+    </div>
+    <div class="scan-area">
+      <video id="scanVideo" playsinline muted></video>
+      <div class="scan-frame"><div class="scan-line"></div></div>
+      <div class="scan-hint" id="scanHint">Rikta kameran mot en QR-kod...</div>
+      <button class="btn-simulate" onclick="simulateScan()">Simulera skanning</button>
+    </div>
+  </section>
+</div>
+<canvas id="scanCanvas" style="display:none;"></canvas>
+
+<script>
+/* SWIRL */
+function makeSpiral(){const pts=[];const cx=50,cy=50;for(let a=0;a<=430;a+=2.5){const t=a/430;const r=38.5*(1-t*0.86);const ang=(a-108)*Math.PI/180;pts.push((cx+r*Math.cos(ang)).toFixed(2)+','+(cy+r*Math.sin(ang)).toFixed(2));}return 'M'+pts.join(' L');}
+const SPIRAL=makeSpiral();
+document.querySelectorAll('.swirl-slot').forEach(slot=>{const size=slot.dataset.size,id=slot.dataset.id;
+  slot.innerHTML=`<svg width="size"height="{size}" viewBox="0 0 100 100" class="swirl-svg"><defs><linearGradient id="id"x1="0%"y1="100%"x2="100%"y2="0%"><stopoffset="0%"stop-color="#3FBF7F"/><stopoffset="16%"stop-color="#29ABE2"/><stopoffset="34%"stop-color="#6C63C7"/><stopoffset="52%"stop-color="#B84BB4"/><stopoffset="70%"stop-color="#E91E63"/><stopoffset="86%"stop-color="#F7941E"/><stopoffset="100%"stop-color="#FDD835"/></linearGradient></defs><pathd="{SPIRAL}" fill="none" stroke="url(#${id})" stroke-width="12" stroke-linecap="round"/></svg>`;});
+
+/* STATE */
+let recipient=null;
+const phoneBook={
+  '0768762522':{name:'Melker Lindström Röst',short:'Mele'},
+  '0701234567':{name:'Signalen',short:'Signalen'},
+  '0737710007':{name:'Amar Ezeldeen',short:'Amar livs'},
+  '0767890123':{name:'Maria Eriksson',short:'Maria'},
+  '0701112233':{name:'Karl Andersson',short:'Karl'}
+};
+
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function setNav(el){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');}
+function setTab(el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');}
+function toggleCard(el){el.style.opacity=el.style.opacity==='.5'?'1':'.5';}
+function focusRecv(){document.getElementById('recvInput').focus();}
+
+/* ---------- MOTTAGARE (skriv nummer -> namn) ---------- */
+function formatPhone(d){d=d.replace(/\D/g,'').slice(0,10);if(d.length<=3)return d;if(d.length<=6)return d.slice(0,3)+' '+d.slice(3);if(d.length<=8)return d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6);return d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6,8)+' '+d.slice(8,10);}
+function intl(d){return '+46 '+formatPhone(d).replace(/^0/,'');}
+function onRecvInput(){
+  const inp=document.getElementById('recvInput');
+  inp.value=formatPhone(inp.value);
+  const digits=inp.value.replace(/\D/g,'');
+  const match=document.getElementById('recvMatch');
+  if(digits.length>=6 && phoneBook[digits]){
+    const p=phoneBook[digits];
+    document.getElementById('recvAv').textContent=p.short[0];
+    document.getElementById('recvName').textContent=p.short;
+    document.getElementById('recvSub').textContent=intl(digits);
+    match.classList.add('show');
+    recipient={name:p.name,short:p.short,phone:intl(digits)};
+  } else if(digits.length>=6){
+    document.getElementById('recvAv').textContent='?';
+    document.getElementById('recvName').textContent='Okänd mottagare';
+    document.getElementById('recvSub').textContent=intl(digits);
+    match.classList.add('show');
+    recipient={name:'Okänd mottagare',short:'Okänd',phone:intl(digits)};
+  } else {match.classList.remove('show');recipient=null;}
+}
+
+/* ---------- BELOPP ---------- */
+function onBelopp(){
+  const inp=document.getElementById('beloppInput');
+  let v=inp.value.replace(/[^\d,.]/g,'').replace('.',',');
+  inp.value=v;
+}
+
+/* ---------- MEDDELANDE ---------- */
+function onMsg(){/* värdet läses vid betalning */}
+
+/* ---------- SIGN ---------- */
+function goSign(){
+  const digits=document.getElementById('recvInput').value.replace(/\D/g,'');
+  if(digits.length<6){alert('Ange ett mobilnummer i mottagarfältet');document.getElementById('recvInput').focus();return;}
+  let belopp=document.getElementById('beloppInput').value.replace(/[^\d,]/g,'');
+  if(belopp===''||parseFloat(belopp.replace(',','.'))<=0){alert('Ange ett belopp');document.getElementById('beloppInput').focus();return;}
+  if(!recipient)onRecvInput();
+  document.getElementById('signRcpt').textContent='Mottagare: '+recipient.phone;
+  document.getElementById('signWho').textContent=recipient.name.toUpperCase();
+  document.getElementById('signAmt').textContent=belopp+' kr';
+  go('signScreen');
+}
+
+/* ---------- BETALNING ---------- */
+function completePayment(){
+  const n=new Date();
+  const dt=n.toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'})+', kl '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  const belopp=document.getElementById('beloppInput').value.replace(/[^\d,]/g,'')+' kr';
+  const msg=document.getElementById('msgInput').value.trim();
+  document.getElementById('successDate').textContent=dt;
+  document.getElementById('successWho').textContent=recipient.name;
+  document.getElementById('successNum').textContent=recipient.phone;
+  document.getElementById('successAmt').textContent=belopp;
+  document.getElementById('successMsg').textContent=msg;
+  document.getElementById('successMsg').style.display=msg?'block':'none';
+  go('successScreen');playSwishSound();burstCenter();makeSparkles();
+}
+
+const greenArea = document.querySelector(".success-top");
+
+if (greenArea) {
+    greenArea.addEventListener("click", makeSparkles);
+}
+function makeSparkles(){const top=document.querySelector('.success-top');top.querySelectorAll('.sparkle').forEach(s=>s.remove());for(let i=0;i<14;i++){const s=document.createElement('div');s.className='sparkle';const sz=Math.random()*5+2;s.style.width=sz+'px';s.style.height=sz+'px';s.style.left=(Math.random()*90+5)+'%';s.style.top=(Math.random()*80+5)+'%';s.style.opacity=(Math.random()*0.6+0.3);top.appendChild(s);}}
+function onSuccessTap(e){const r=document.getElementById('successScreen').getBoundingClientRect();spawnGlitter(e.clientX-r.left,e.clientY-r.top);playPop();}
+function burstCenter(){const r=document.getElementById('successScreen').getBoundingClientRect();for(let i=0;i<3;i++)setTimeout(()=>spawnGlitter(r.width/2+(Math.random()-0.5)*140,r.height*0.22+(Math.random()-0.5)*140),i*120);}
+function spawnGlitter(x,y){const cols=['#FFD700','#FFF8DC','#FFFFFF','#FFEC8B','#F5DEB3'];for(let i=0;i<16;i++){const p=document.createElement('div');p.className='glitter';const s=Math.random()*8+3;p.style.width=s+'px';p.style.height=s+'px';p.style.left=x+'px';p.style.top=y+'px';const c=cols[Math.floor(Math.random()*cols.length)];p.style.background=c;p.style.boxShadow='0 0 8px '+c;const a=Math.random()*Math.PI*2,dist=Math.random()*90+25;p.style.setProperty('--dx',(Math.cos(a)*dist)+'px');p.style.setProperty('--dy',(Math.sin(a)*dist-25)+'px');document.getElementById('successScreen').appendChild(p);setTimeout(()=>p.remove(),950);}}
+let actx=null;function getCtx(){if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();return actx;}
+function playSwishSound() {
+    const sound = document.getElementById("swishSound");
+
+    if (!sound) {
+        console.error("Hittar inte MP3-ljudet.");
+        return;
+    }
+
+    sound.currentTime = 0;
+    sound.play().catch(error => {
+        console.error("Kunde inte spela MP3-filen:", error);
+    });
+}
+function playPop() {
+    const sound = document.getElementById("plingSound");
+
+    if (!sound) {
+        console.error("Hittar inte pling-ljudet.");
+        return;
+    }
+
+    sound.currentTime = 0;
+    sound.play().catch(error => {
+        console.error("Kunde inte spela pling-filen:", error);
+    });
+}
+/* ---------- SCAN ---------- */
+let stream=null,scanning=false,video=null,scanCanvas=null,scanCtx=null;
+async function startScan(){go('scanScreen');video=document.getElementById('scanVideo');scanCanvas=document.getElementById('scanCanvas');scanCtx=scanCanvas.getContext('2d');document.getElementById('scanHint').textContent='Startar kamera...';
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});video.srcObject=stream;await video.play();scanning=true;document.getElementById('scanHint').textContent='Rikta kameran mot en QR-kod...';requestAnimationFrame(scanTick);}
+  catch(e){document.getElementById('scanHint').textContent='Ingen kamera – tryck "Simulera skanning"';}}
+function scanTick(){if(!scanning||!video)return;if(video.readyState===video.HAVE_ENOUGH_DATA&&window.jsQR){scanCanvas.width=video.videoWidth;scanCanvas.height=video.videoHeight;scanCtx.drawImage(video,0,0,scanCanvas.width,scanCanvas.height);const img=scanCtx.getImageData(0,0,scanCanvas.width,scanCanvas.height);const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});if(code&&code.data){onScanned(code.data);return;}}requestAnimationFrame(scanTick);}
+function stopScan(){scanning=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}}
+function onScanned(data){stopScan();let k='0768762522';try{const q=data.split('?')[1]||'';const p=new URLSearchParams(q);if(p.get('phone'))k=p.get('phone').replace(/\D/g,'');}catch(e){}
+  const p=phoneBook[k]||{name:'Okänd mottagare',short:'Okänd'};
+  document.getElementById('recvInput').value=formatPhone(k);onRecvInput();
+  document.getElementById('scanHint').textContent='✓ Hittade: '+p.short;
+  setTimeout(()=>go('swishaScreen'),700);}
+function simulateScan(){onScanned('swish://pay?phone=0768762522');}
+document.addEventListener('click',()=>{getCtx().resume&&getCtx().resume();},{once:true});
+</script>
+<audio id="swishSound" src="swishljud.mp3" preload="auto"></audio>
+<audio id="plingSound" src="pling.mp3" preload="auto"></audio>
+</body>
+</html>
+
+
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- HOME -->
+  <section class="screen active" id="homeScreen">
+    <div class="home-header">
+      <img src="swishlogga1.png" alt="Logga" class="app-logo">
+      <div class="home-divider"></div>
+      <div class="home-brand"><span class="name">Swish</span><span class="bank">Swedbank</span></div>
+    </div>
+    <div class="info-card">
+      <div class="info-icon-box"><div class="circ">i</div></div>
+      <div class="info-text"><div class="lbl">INFORMATION</div><div class="msg">Dags att förnya<br>ditt medgivande</div></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="home-actions">
+      <button class="btn-primary" onclick="go('swishaScreen')">Swisha</button>
+      <button class="btn-secondary" onclick="startScan()">Skanna <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 19h2v2h-2zm-6 0h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm-4 0h2v2h-2zm-4 4h2v2h-2zm2-2h2v2h-2zm2 4h2v2h-2z"/></svg></button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="setNav(this)"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Hem</div>
+      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20z"/></svg>Tillsammans</div>
+      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2" stroke-linecap="round"/></svg><span class="badge">19</span>Historik</div>
+      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 19c.7-3 3.3-5 6.5-5s5.8 2 6.5 5" stroke-linecap="round"/></svg>Profil</div>
+    </div>
+  </section>
+
+  <!-- SWISHA FORM (redigerbar) -->
+  <section class="screen" id="swishaScreen">
+    <div class="top-bar">
+      <div class="icon-circle" onclick="go('homeScreen')"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg></div>
+      <div class="tabs"><span class="tab active" onclick="setTab(this)">Swisha</span><span class="tab" onclick="setTab(this)">Be om</span></div>
+      <div class="icon-circle q">?</div>
+    </div>
+    <div class="form-area">
+      <div class="field" id="recvField">
+        <div class="f-label">Mottagare</div>
+        <input id="recvInput" inputmode="numeric" placeholder="Mobilnummer" oninput="onRecvInput()" onfocus="recvField.classList.add('focus')" onblur="recvField.classList.remove('focus')">
+        <div class="recv-match" id="recvMatch">
+          <div class="av" id="recvAv">M</div>
+          <div><div class="nm" id="recvName">—</div><div class="sub" id="recvSub">—</div></div>
+          <div class="ok">✓</div>
+        </div>
+        <div class="mottagare-row">
+          <div class="mott-item" onclick="focusRecv()"><div class="mott-circle"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-7 2.2-7 4.5V20h14v-1.5C19 16.2 16 14 12 14z"/></svg></div><span>Kontakter</span></div>
+          <div class="mott-item" onclick="focusRecv()"><div class="mott-circle"><svg viewBox="0 0 24 24" fill="none" stroke="#5B9BE0" stroke-width="2"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20z"/></svg></div><span>Favoriter</span></div>
+          <div class="mott-item" onclick="startScan()"><div class="mott-circle green"><svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 19h2v2h-2zm-6 0h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm-4 0h2v2h-2zm-4 4h2v2h-2zm2-2h2v2h-2zm2 4h2v2h-2z"/></svg></div><span>Skanna QR</span></div>
+        </div>
+      </div>
+      <div class="field" id="beloppField">
+        <div class="f-label">Belopp</div>
+        <input id="beloppInput" inputmode="decimal" placeholder="0 kr" oninput="onBelopp()" onfocus="beloppField.classList.add('focus')" onblur="beloppField.classList.remove('focus')">
+      </div>
+      <div class="field" id="msgField">
+        <div class="f-label">Meddelande</div>
+        <input id="msgInput" placeholder="Lägg till meddelande" oninput="onMsg()" onfocus="msgField.classList.add('focus')" onblur="msgField.classList.remove('focus')">
+      </div>
+      <div class="send-card-row" onclick="toggleCard(this)"><svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>Skicka med ett kort</div>
+      <button class="btn-swisha" onclick="goSign()">Swisha <span class="bankid"><svg width="58" height="26" viewBox="0 0 58 26"><text x="0" y="17" fill="#fff" font-size="15" font-weight="700" font-style="italic" font-family="Inter">iD</text><text x="20" y="24" fill="#fff" font-size="8" font-weight="600" font-family="Inter">BankID</text></svg></span></button>
+    </div>
+  </section>
+
+  <!-- SIGN -->
+  <section class="screen" id="signScreen">
+    <div class="sign-top">
+      <button class="avbryt" onclick="go('swishaScreen')">Avbryt</button>
+      <div class="sign-title">UNDERSKRIFT</div>
+      <svg width="52" height="26" viewBox="0 0 52 26"><text x="0" y="17" fill="#fff" font-size="16" font-weight="700" font-style="italic" font-family="Inter">iD</text><text x="18" y="24" fill="#fff" font-size="8" font-weight="600" font-family="Inter">BankID</text></svg>
+    </div>
+    <div class="sign-body">
+      <div class="sign-h1">ASTOR HALLÉN SEKANDER</div>
+      <div class="sign-p">Jag skriver under hos:</div>
+      <div class="sign-strong">Swedbank och Sparbankerna<br>avseende Swish</div>
+      <div class="pen-circle"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></div>
+    </div>
+    <div class="sign-card">
+      <div class="rcpt" id="signRcpt">Mottagare: +46 76 876 25 22</div>
+      <div class="who" id="signWho">MELKER LINDSTRÖM RÖST</div>
+      <hr>
+      <div class="bel">Belopp:</div>
+      <div class="amt" id="signAmt">1 kr</div>
+      <hr>
+      <div class="disc">Tänk på att aldrig betala eller överföra pengar på någon annans uppmaning. Avbryt signeringen och kontakta din bank om du känner dig osäker.</div>
+    </div>
+    <button class="touchid" onclick="completePayment()">Skriv under med Touch ID</button>
+  </section>
+
+  <!-- SUCCESS -->
+  <section class="screen" id="successScreen" onclick="onSuccessTap(event)">
+    <div class="success-top">
+      <div class="check-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="53" r="30" fill="none" stroke="#ffffff" stroke-width="1.8" opacity=".95"/>
+          <path d="M31 55 L45 71 L80 27" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="success-title">Din betalning är skickad!</div>
+    </div>
+    <div class="success-body">
+      <div class="success-date" id="successDate">9 okt. 2026, kl 17:19</div>
+      <div class="success-card">
+        <div class="who" id="successWho">Melker Lindström Röst</div>
+        <div class="num" id="successNum">+46 76 876 25 22</div>
+        <div class="amt" id="successAmt">1 kr</div>
+        <div class="dots">•••</div>
+      </div>
+      <div class="success-msg" id="successMsg">Pengar för maten</div>
+    </div>
+    <div class="success-footer">
+      <div class="swish-logo"><span class="swirl-slot" data-size="30" data-id="swFoot"></span><span class="word">swish</span><span class="reg">®</span></div>
+      <button class="x-circle" onclick="go('homeScreen')"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg></button>
+    </div>
+  </section>
+
+  <!-- SCAN -->
+  <section class="screen" id="scanScreen">
+    <div class="top-bar" style="justify-content:flex-start;padding-bottom:4px;">
+      <div class="icon-circle" onclick="stopScan();go('homeScreen')"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg></div>
+    </div>
+    <div class="scan-area">
+      <video id="scanVideo" playsinline muted></video>
+      <div class="scan-frame"><div class="scan-line"></div></div>
+      <div class="scan-hint" id="scanHint">Rikta kameran mot en QR-kod...</div>
+      <button class="btn-simulate" onclick="simulateScan()">Simulera skanning</button>
+    </div>
+  </section>
+</div>
+<canvas id="scanCanvas" style="display:none;"></canvas>
+
+<script>
+/* SWIRL */
+function makeSpiral(){const pts=[];const cx=50,cy=50;for(let a=0;a<=430;a+=2.5){const t=a/430;const r=38.5*(1-t*0.86);const ang=(a-108)*Math.PI/180;pts.push((cx+r*Math.cos(ang)).toFixed(2)+','+(cy+r*Math.sin(ang)).toFixed(2));}return 'M'+pts.join(' L');}
+const SPIRAL=makeSpiral();
+document.querySelectorAll('.swirl-slot').forEach(slot=>{const size=slot.dataset.size,id=slot.dataset.id;
+  slot.innerHTML=`<svg width="size"height="{size}" viewBox="0 0 100 100" class="swirl-svg"><defs><linearGradient id="id"x1="0%"y1="100%"x2="100%"y2="0%"><stopoffset="0%"stop-color="#3FBF7F"/><stopoffset="16%"stop-color="#29ABE2"/><stopoffset="34%"stop-color="#6C63C7"/><stopoffset="52%"stop-color="#B84BB4"/><stopoffset="70%"stop-color="#E91E63"/><stopoffset="86%"stop-color="#F7941E"/><stopoffset="100%"stop-color="#FDD835"/></linearGradient></defs><pathd="{SPIRAL}" fill="none" stroke="url(#${id})" stroke-width="12" stroke-linecap="round"/></svg>`;});
+
+/* STATE */
+let recipient=null;
+const phoneBook={
+  '0768762522':{name:'Melker Lindström Röst',short:'Mele'},
+  '0701234567':{name:'Signalen',short:'Signalen'},
+  '0737710007':{name:'Amar Ezeldeen',short:'Amar'},
+  '0767890123':{name:'Maria Eriksson',short:'Maria'},
+  '0701112233':{name:'Karl Andersson',short:'Karl'}
+};
+
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function setNav(el){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');}
+function setTab(el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');}
+function toggleCard(el){el.style.opacity=el.style.opacity==='.5'?'1':'.5';}
+function focusRecv(){document.getElementById('recvInput').focus();}
+
+/* ---------- MOTTAGARE (skriv nummer -> namn) ---------- */
+function formatPhone(d){d=d.replace(/\D/g,'').slice(0,10);if(d.length<=3)return d;if(d.length<=6)return d.slice(0,3)+' '+d.slice(3);if(d.length<=8)return d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6);return d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6,8)+' '+d.slice(8,10);}
+function intl(d){return '+46 '+formatPhone(d).replace(/^0/,'');}
+function onRecvInput(){
+  const inp=document.getElementById('recvInput');
+  inp.value=formatPhone(inp.value);
+  const digits=inp.value.replace(/\D/g,'');
+  const match=document.getElementById('recvMatch');
+  if(digits.length>=6 && phoneBook[digits]){
+    const p=phoneBook[digits];
+    document.getElementById('recvAv').textContent=p.short[0];
+    document.getElementById('recvName').textContent=p.short;
+    document.getElementById('recvSub').textContent=intl(digits);
+    match.classList.add('show');
+    recipient={name:p.name,short:p.short,phone:intl(digits)};
+  } else if(digits.length>=6){
+    document.getElementById('recvAv').textContent='?';
+    document.getElementById('recvName').textContent='Okänd mottagare';
+    document.getElementById('recvSub').textContent=intl(digits);
+    match.classList.add('show');
+    recipient={name:'Okänd mottagare',short:'Okänd',phone:intl(digits)};
+  } else {match.classList.remove('show');recipient=null;}
+}
+
+/* ---------- BELOPP ---------- */
+function onBelopp(){
+  const inp=document.getElementById('beloppInput');
+  let v=inp.value.replace(/[^\d,.]/g,'').replace('.',',');
+  inp.value=v;
+}
+
+/* ---------- MEDDELANDE ---------- */
+function onMsg(){/* värdet läses vid betalning */}
+
+/* ---------- SIGN ---------- */
+function goSign(){
+  const digits=document.getElementById('recvInput').value.replace(/\D/g,'');
+  if(digits.length<6){alert('Ange ett mobilnummer i mottagarfältet');document.getElementById('recvInput').focus();return;}
+  let belopp=document.getElementById('beloppInput').value.replace(/[^\d,]/g,'');
+  if(belopp===''||parseFloat(belopp.replace(',','.'))<=0){alert('Ange ett belopp');document.getElementById('beloppInput').focus();return;}
+  if(!recipient)onRecvInput();
+  document.getElementById('signRcpt').textContent='Mottagare: '+recipient.phone;
+  document.getElementById('signWho').textContent=recipient.name.toUpperCase();
+  document.getElementById('signAmt').textContent=belopp+' kr';
+  go('signScreen');
+}
+
+/* ---------- BETALNING ---------- */
+function completePayment(){
+  const n=new Date();
+  const dt=n.toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'})+', kl '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  const belopp=document.getElementById('beloppInput').value.replace(/[^\d,]/g,'')+' kr';
+  const msg=document.getElementById('msgInput').value.trim();
+  document.getElementById('successDate').textContent=dt;
+  document.getElementById('successWho').textContent=recipient.name;
+  document.getElementById('successNum').textContent=recipient.phone;
+  document.getElementById('successAmt').textContent=belopp;
+  document.getElementById('successMsg').textContent=msg;
+  document.getElementById('successMsg').style.display=msg?'block':'none';
+  go('successScreen');playSwishSound();burstCenter();makeSparkles();
+}
+function makeSparkles(){const top=document.querySelector('.success-top');top.querySelectorAll('.sparkle').forEach(s=>s.remove());for(let i=0;i<14;i++){const s=document.createElement('div');s.className='sparkle';const sz=Math.random()*5+2;s.style.width=sz+'px';s.style.height=sz+'px';s.style.left=(Math.random()*90+5)+'%';s.style.top=(Math.random()*80+5)+'%';s.style.opacity=(Math.random()*0.6+0.3);top.appendChild(s);}}
+function onSuccessTap(e){const r=document.getElementById('successScreen').getBoundingClientRect();spawnGlitter(e.clientX-r.left,e.clientY-r.top);playPop();}
+function burstCenter(){const r=document.getElementById('successScreen').getBoundingClientRect();for(let i=0;i<3;i++)setTimeout(()=>spawnGlitter(r.width/2+(Math.random()-0.5)*140,r.height*0.22+(Math.random()-0.5)*140),i*120);}
+function spawnGlitter(x,y){const cols=['#FFD700','#FFF8DC','#FFFFFF','#FFEC8B','#F5DEB3'];for(let i=0;i<16;i++){const p=document.createElement('div');p.className='glitter';const s=Math.random()*8+3;p.style.width=s+'px';p.style.height=s+'px';p.style.left=x+'px';p.style.top=y+'px';const c=cols[Math.floor(Math.random()*cols.length)];p.style.background=c;p.style.boxShadow='0 0 8px '+c;const a=Math.random()*Math.PI*2,dist=Math.random()*90+25;p.style.setProperty('--dx',(Math.cos(a)*dist)+'px');p.style.setProperty('--dy',(Math.sin(a)*dist-25)+'px');document.getElementById('successScreen').appendChild(p);setTimeout(()=>p.remove(),950);}}
+let actx=null;function getCtx(){if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();return actx;}
+function playSwishSound() {
+    const sound = document.getElementById("swishSound");
+
+    if (!sound) {
+        console.error("Hittar inte MP3-ljudet.");
+        return;
+    }
+
+    sound.currentTime = 0;
+    sound.play().catch(error => {
+        console.error("Kunde inte spela MP3-filen:", error);
+    });
+}
+function playPop(){const ctx=getCtx();const now=ctx.currentTime;const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.setValueAtTime(1400,now);o.frequency.exponentialRampToValueAtTime(2400,now+0.08);g.gain.setValueAtTime(0.15,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.15);o.connect(g).connect(ctx.destination);o.start(now);o.stop(now+0.16);}
+
+/* ---------- SCAN ---------- */
+let stream=null,scanning=false,video=null,scanCanvas=null,scanCtx=null;
+async function startScan(){go('scanScreen');video=document.getElementById('scanVideo');scanCanvas=document.getElementById('scanCanvas');scanCtx=scanCanvas.getContext('2d');document.getElementById('scanHint').textContent='Startar kamera...';
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});video.srcObject=stream;await video.play();scanning=true;document.getElementById('scanHint').textContent='Rikta kameran mot en QR-kod...';requestAnimationFrame(scanTick);}
+  catch(e){document.getElementById('scanHint').textContent='Ingen kamera – tryck "Simulera skanning"';}}
+function scanTick(){if(!scanning||!video)return;if(video.readyState===video.HAVE_ENOUGH_DATA&&window.jsQR){scanCanvas.width=video.videoWidth;scanCanvas.height=video.videoHeight;scanCtx.drawImage(video,0,0,scanCanvas.width,scanCanvas.height);const img=scanCtx.getImageData(0,0,scanCanvas.width,scanCanvas.height);const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});if(code&&code.data){onScanned(code.data);return;}}requestAnimationFrame(scanTick);}
+function stopScan(){scanning=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}}
+function onScanned(data){stopScan();let k='0768762522';try{const q=data.split('?')[1]||'';const p=new URLSearchParams(q);if(p.get('phone'))k=p.get('phone').replace(/\D/g,'');}catch(e){}
+  const p=phoneBook[k]||{name:'Okänd mottagare',short:'Okänd'};
+  document.getElementById('recvInput').value=formatPhone(k);onRecvInput();
+  document.getElementById('scanHint').textContent='✓ Hittade: '+p.short;
+  setTimeout(()=>go('swishaScreen'),700);}
+function simulateScan(){onScanned('swish://pay?phone=0768762522');}
+document.addEventListener('click',()=>{getCtx().resume&&getCtx().resume();},{once:true});
+</script>
+</body>
+</html>
+
