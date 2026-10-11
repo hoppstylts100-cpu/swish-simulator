@@ -110,7 +110,16 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
 @keyframes pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
 .check-wrap svg{width:100%;height:100%;overflow:visible;}
 .success-title{font-size:26px;font-weight:600;position:relative;z-index:2;}
-.sparkle{position:absolute;border-radius:50%;background:rgba(255,255,255,.85);}
+.sparkle{
+  position:absolute;border-radius:50%;background:rgba(255,255,255,.85);
+  animation:floatSparkle var(--dur) ease-in-out infinite alternate;
+  will-change:transform,opacity;
+}
+@keyframes floatSparkle{
+  0%{transform:translate(0,0) scale(1);opacity:var(--op1);}
+  50%{transform:translate(calc(var(--dx)*.5),calc(var(--dy)*.5)) scale(var(--sc));}
+  100%{transform:translate(var(--dx),var(--dy)) scale(1);opacity:var(--op2);}
+}
 .success-body{padding:26px 20px 0;text-align:center;display:flex;flex-direction:column;}
 .success-date{font-size:16px;color:#8B95A6;}
 .success-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;margin-top:18px;text-align:left;position:relative;}
@@ -343,7 +352,27 @@ function completePayment(){
   document.getElementById('successMsg').style.display=msg?'block':'none';
   go('successScreen');playSwishSound();burstCenter();makeSparkles();
 }
-function makeSparkles(){const top=document.querySelector('.success-top');top.querySelectorAll('.sparkle').forEach(s=>s.remove());for(let i=0;i<14;i++){const s=document.createElement('div');s.className='sparkle';const sz=Math.random()*5+2;s.style.width=sz+'px';s.style.height=sz+'px';s.style.left=(Math.random()*90+5)+'%';s.style.top=(Math.random()*80+5)+'%';s.style.opacity=(Math.random()*0.6+0.3);top.appendChild(s);}}
+function makeSparkles(){
+  const top=document.querySelector('.success-top');
+  top.querySelectorAll('.sparkle').forEach(s=>s.remove());
+  for(let i=0;i<16;i++){
+    const s=document.createElement('div');
+    s.className='sparkle';
+    const sz=Math.random()*5+2;
+    s.style.width=sz+'px';
+    s.style.height=sz+'px';
+    s.style.left=(Math.random()*90+5)+'%';
+    s.style.top=(Math.random()*80+5)+'%';
+    s.style.setProperty('--dx',((Math.random()-0.5)*44).toFixed(1)+'px');
+    s.style.setProperty('--dy',((Math.random()-0.5)*44-10).toFixed(1)+'px');
+    s.style.setProperty('--sc',(Math.random()*0.5+0.8).toFixed(2));
+    s.style.setProperty('--op1',(Math.random()*0.35+0.25).toFixed(2));
+    s.style.setProperty('--op2',(Math.random()*0.5+0.4).toFixed(2));
+    s.style.setProperty('--dur',(Math.random()*4+3.5).toFixed(2)+'s');
+    s.style.animationDelay=(Math.random()*4).toFixed(2)+'s';
+    top.appendChild(s);
+  }
+}
 function onSuccessTap(e){const r=document.getElementById('successScreen').getBoundingClientRect();spawnGlitter(e.clientX-r.left,e.clientY-r.top);playPop();}
 function burstCenter(){const r=document.getElementById('successScreen').getBoundingClientRect();for(let i=0;i<3;i++)setTimeout(()=>spawnGlitter(r.width/2+(Math.random()-0.5)*140,r.height*0.22+(Math.random()-0.5)*140),i*120);}
 function spawnGlitter(x,y){const cols=['#FFD700','#FFF8DC','#FFFFFF','#FFEC8B','#F5DEB3'];for(let i=0;i<16;i++){const p=document.createElement('div');p.className='glitter';const s=Math.random()*8+3;p.style.width=s+'px';p.style.height=s+'px';p.style.left=x+'px';p.style.top=y+'px';const c=cols[Math.floor(Math.random()*cols.length)];p.style.background=c;p.style.boxShadow='0 0 8px '+c;const a=Math.random()*Math.PI*2,dist=Math.random()*90+25;p.style.setProperty('--dx',(Math.cos(a)*dist)+'px');p.style.setProperty('--dy',(Math.sin(a)*dist-25)+'px');document.getElementById('successScreen').appendChild(p);setTimeout(()=>p.remove(),950);}}
