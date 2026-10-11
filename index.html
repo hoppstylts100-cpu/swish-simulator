@@ -349,8 +349,12 @@ function burstCenter(){const r=document.getElementById('successScreen').getBound
 function spawnGlitter(x,y){const cols=['#FFD700','#FFF8DC','#FFFFFF','#FFEC8B','#F5DEB3'];for(let i=0;i<16;i++){const p=document.createElement('div');p.className='glitter';const s=Math.random()*8+3;p.style.width=s+'px';p.style.height=s+'px';p.style.left=x+'px';p.style.top=y+'px';const c=cols[Math.floor(Math.random()*cols.length)];p.style.background=c;p.style.boxShadow='0 0 8px '+c;const a=Math.random()*Math.PI*2,dist=Math.random()*90+25;p.style.setProperty('--dx',(Math.cos(a)*dist)+'px');p.style.setProperty('--dy',(Math.sin(a)*dist-25)+'px');document.getElementById('successScreen').appendChild(p);setTimeout(()=>p.remove(),950);}}
 let actx=null;function getCtx(){if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();return actx;}
 function playSwishSound(){const sound=document.getElementById("swishSound");if(!sound){console.error("Hittar inte MP3-ljudet.");return;}sound.currentTime=0;sound.play().catch(error=>console.error("Kunde inte spela MP3-filen:",error));}
-function playPop(){const ctx=getCtx();const now=ctx.currentTime;const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.setValueAtTime(1400,now);o.frequency.exponentialRampToValueAtTime(2400,now+0.08);g.gain.setValueAtTime(0.15,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.15);o.connect(g).connect(ctx.destination);o.start(now);o.stop(now+0.16);}
-
+function playPop(){
+  const sound=document.getElementById("plingSound");
+  if(!sound){console.error("Hittar inte pling-ljudet.");return;}
+  sound.currentTime=0;
+  sound.play().catch(error=>console.error("Kunde inte spela pling-filen:",error));
+}
 /* ---------- SCAN ---------- */
 let stream=null,scanning=false,video=null,scanCanvas=null,scanCtx=null;
 async function startScan(){go('scanScreen');video=document.getElementById('scanVideo');scanCanvas=document.getElementById('scanCanvas');scanCtx=scanCanvas.getContext('2d');document.getElementById('scanHint').textContent='Startar kamera...';
