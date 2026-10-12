@@ -128,12 +128,16 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
 .success-card .amt{font-size:34px;font-weight:500;color:#fff;margin-top:16px;}
 .success-card .dots{position:absolute;right:20px;bottom:22px;color:#8B95A6;font-size:24px;letter-spacing:2px;}
 .success-msg{font-size:17px;color:#C4CDD6;margin-top:22px;}
-/* REFERENS */
-.ref-row{margin-top:22px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+/* REFERENS – linjer på båda sidor, döljs om ingen referens */
+.ref-row{display:none;position:absolute;left:20px;right:20px;bottom:30px;
+  padding:16px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  align-items:center;justify-content:space-between;}
 .ref-row .ref-lbl{font-size:16px;color:#8B95A6;}
 .ref-row .ref-val{font-size:17px;color:#fff;font-weight:500;letter-spacing:.5px;}
+#successScreen.has-ref .ref-row{display:flex;}
+#successScreen.has-ref .receipt-logo{display:none;}
 .success-footer{margin-top:auto;padding:24px 24px 28px;display:flex;align-items:center;justify-content:space-between;position:relative;}
-.x-circle{width:58px;height:58px;border-radius:50%;background:#1E2B3B;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto;}
+.x-circle{width:58px;height:58px;border-radius:50%;background:#1E2B3B;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto;position:relative;z-index:2;}
 .x-circle svg{width:26px;height:26px;fill:#fff;}
 .glitter{position:absolute;border-radius:50%;pointer-events:none;animation:glit .9s ease-out forwards;z-index:30;}
 @keyframes glit{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0);opacity:0}}
@@ -258,13 +262,13 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
         <div class="dots">•••</div>
       </div>
       <div class="success-msg" id="successMsg">Pengar för maten</div>
-      <div class="ref-row" id="successRef" style="display:none;">
+      <div class="ref-row" id="successRef">
         <span class="ref-lbl">Referens</span>
         <span class="ref-val" id="refVal"></span>
       </div>
     </div>
     <div class="success-footer">
-      <img src="swishlogga2.png" class="receipt-logo" alt="Logga">
+      <img src="swishlogga2.png" class="receipt-logo" id="receiptLogo" alt="Logga">
       <button class="x-circle" onclick="go('homeScreen')"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg></button>
     </div>
   </section>
@@ -358,13 +362,13 @@ function completePayment(){
   document.getElementById('successAmt').textContent=belopp;
   document.getElementById('successMsg').textContent=msg;
   document.getElementById('successMsg').style.display=msg?'block':'none';
-  /* Referens – visas bara om mottagaren har en referens (t.ex. ALAN AL-BAYATI) */
-  const refRow=document.getElementById('successRef');
+  /* Referens + dölj loggan – visas bara om mottagaren har en referens (t.ex. ALAN AL-BAYATI) */
+  const scr=document.getElementById('successScreen');
   if(recipient.ref){
     document.getElementById('refVal').textContent=recipient.ref;
-    refRow.style.display='flex';
+    scr.classList.add('has-ref');
   } else {
-    refRow.style.display='none';
+    scr.classList.remove('has-ref');
   }
   go('successScreen');playSwishSound();burstCenter();makeSparkles();
 }
@@ -416,6 +420,6 @@ function simulateScan(){onScanned('swish://pay?phone=0768762522');}
 document.addEventListener('click',()=>{getCtx().resume&&getCtx().resume();},{once:true});
 </script>
 <audio id="swishSound" src="swishljud.mp3" preload="auto"></audio>
-<audio id="swishSound" src="pling.mp3" preload="auto"></audio>
+<audio id="plingSound" src="pling.mp3" preload="auto"></audio>
 </body>
 </html>
