@@ -289,6 +289,52 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
 <canvas id="scanCanvas" style="display:none;"></canvas>
 
 <script>
+/* normalisera skannat nummer: +46/0046 -> 0, ta bort skräptecken */
+function normalizeDigits(raw){
+  let d=String(raw||'').replace(/\D/g,'');
+  if(!d)return '';
+  if(d.startsWith('0046'))d='0'+d.slice(4);
+  else if(d.startsWith('46')&&d.length>=10)d='0'+d.slice(2);
+  return d;
+}
+/* 1) försök läsa ut nummer OCH namn ur en QR-kod */
+function extractFromQr(data){
+  let number='',name='';
+  try{
+    const q=data.includes('?')?data.split('?')[1]:'';
+    const params=new URLSearchParams(q);
+    let payload=params.get('data')||'';
+    if(payload){
+      let json=null;
+      try{json=JSON.parse(payload);}catch(e){try{json=JSON.parse(decodeURIComponent(payload));}catch(_){}}
+      if(json){
+        number=(json.payee&&(json.payee.value||json.payee.alias))||json.payeeAlias||json.phone||'';
+        name=(json.payee&&json.payee.name)||json.payeeName||json.name||'';
+      }
+    }
+    if(!number)number=params.get('phone')||params.get('swish')||params.get('number')||'';
+  }catch(e){}
+  if(!number){const m=data.match(/(\+?\d[\d\s]{6,})/);if(m)number=m[1];}
+  return {number,name};
+}
+
+/* 3) sista utväg: slå upp namn online (kräver internet, best-effort) */
+async function lookupOnline(digits){
+  if(!digits)return null;
+  const target='https://www.hitta.se/sök?vad='+encodeURIComponent(digits);
+  try{
+    const res=await Promise.race([
+      fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(target)),
+      new Promise((_,rej)=>setTimeout(()=>rej('timeout'),4000))
+    ]);
+    const html=await res.text();
+    const m=html.match(/<h[23][^>]*>([^<]{2,50})<\/h[23]>/)
+          ||html.match(/"name"\s*:\s*"([^"]{2,50})"/);
+    if(m&&m[1])return m[1].replace(/\s+/g,' ').trim();
+  }catch(e){}
+  return null;
+}
+
 /* STATE */
 let recipient=null;
 const REF_VALUE='1834 8037 60';           /* referensen som visas för ALAN */
@@ -417,11 +463,30 @@ async function startScan(){go('scanScreen');video=document.getElementById('scanV
   catch(e){document.getElementById('scanHint').textContent='Ingen kamera – tryck "Simulera skanning"';}}
 function scanTick(){if(!scanning||!video)return;if(video.readyState===video.HAVE_ENOUGH_DATA&&window.jsQR){scanCanvas.width=video.videoWidth;scanCanvas.height=video.videoHeight;scanCtx.drawImage(video,0,0,scanCanvas.width,scanCanvas.height);const img=scanCtx.getImageData(0,0,scanCanvas.width,scanCanvas.height);const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});if(code&&code.data){onScanned(code.data);return;}}requestAnimationFrame(scanTick);}
 function stopScan(){scanning=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}}
-function onScanned(data){stopScan();let k='0768762522';try{const q=data.split('?')[1]||'';const p=new URLSearchParams(q);if(p.get('phone'))k=p.get('phone').replace(/\D/g,'');}catch(e){}
-  const p=phoneBook[k]||{name:'Okänd mottagare',short:'Okänd'};
-  document.getElementById('recvInput').value=formatPhone(k);onRecvInput();
-  document.getElementById('scanHint').textContent='✓ Hittade: '+p.short;
-  setTimeout(()=>go('swishaScreen'),700);}
+async function onScanned(data){
+  stopScan();
+  document.getElementById('scanHint').textContent='Söker mottagare...';
+
+  const {number,name:qrName}=extractFromQr(data);
+  const digits=normalizeDigits(number)||normalizeDigits(data);
+  let person=phoneBook[digits];
+  let displayName=(person&&person.name)||qrName||'';
+
+  /* hittades inget lokalt? prova online */
+  if(!displayName&&digits){
+    const on=await lookupOnline(digits);
+    if(on)displayName=on;
+  }
+
+  const key=digits||'0768762522';
+  if(displayName&&!phoneBook[key])phoneBook[key]={name:displayName,short:displayName};
+
+  document.getElementById('recvInput').value=formatPhone(key);
+  onRecvInput();
+  const shown=(phoneBook[key]&&phoneBook[key].name)||displayName||'Okänd mottagare';
+  document.getElementById('scanHint').textContent='✓ Hittade: '+shown;
+  setTimeout(()=>go('swishaScreen'),700);
+}
 function simulateScan(){onScanned('swish://pay?phone=0768762522');}
 document.addEventListener('click',()=>{getCtx().resume&&getCtx().resume();},{once:true});
 </script>
