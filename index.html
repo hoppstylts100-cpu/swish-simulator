@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -289,35 +289,35 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
 <canvas id="scanCanvas" style="display:none;"></canvas>
 
 <script>
-/* normalisera skannat nummer: +46/0046 -> 0, ta bort skräptecken */
-function normalizeDigits(raw){
-  let d=String(raw||'').replace(/\D/g,'');
-  if(!d)return '';
-  if(d.startsWith('0046'))d='0'+d.slice(4);
-  else if(d.startsWith('46')&&d.length>=10)d='0'+d.slice(2);
-  return d;
+/* hämta via CORS-proxy, prova flera */
+async function fetchVia(url,ms){
+  const proxies=['https://api.allorigins.win/raw?url=','https://corsproxy.io/?url='];
+  let err='';
+  for(const p of proxies){
+    try{
+      const res=await Promise.race([
+        fetch(p+encodeURIComponent(url)),
+        new Promise((_,rej)=>setTimeout(()=>rej('timeout'),ms||7000))
+      ]);
+      if(res.ok){const t=await res.text();if(t&&t.length>500)return t;}
+    }catch(e){err=e.message;}
+  }
+  throw new Error(err||'ingen proxy svarade');
 }
-/* 1) försök läsa ut nummer OCH namn ur en QR-kod */
-function extractFromQr(data){
-  let number='',name='';
-  try{
-    const q=data.includes('?')?data.split('?')[1]:'';
-    const params=new URLSearchParams(q);
-    let payload=params.get('data')||'';
-    if(payload){
-      let json=null;
-      try{json=JSON.parse(payload);}catch(e){try{json=JSON.parse(decodeURIComponent(payload));}catch(_){}}
-      if(json){
-        number=(json.payee&&(json.payee.value||json.payee.alias))||json.payeeAlias||json.phone||'';
-        name=(json.payee&&json.payee.name)||json.payeeName||json.name||'';
-      }
-    }
-    if(!number)number=params.get('phone')||params.get('swish')||params.get('number')||'';
-  }catch(e){}
-  if(!number){const m=data.match(/(\+?\d[\d\s]{6,})/);if(m)number=m[1];}
-  return {number,name};
+/* slå upp namn via Eniro (fungerar för publikt listade nummer) */
+async function lookupOnline(digits){
+  if(!digits)return null;
+  const d=digits.replace(/\D/g,'');
+  for(const typ of ['personer','företag']){
+    try{
+      const html=await fetchVia('https://www.eniro.se/'+d+'/'+typ);
+      if(/Okänd uppringare/i.test(html)&&/Vem ringde från/i.test(html))continue;
+      const m=html.match(/href="[^"]*\/(?:person|firma)"[^>]*>([^<]{2,60})<\/a>/);
+      if(m&&m[1]){console.log('eniro:',m[1]);return m[1].trim();}
+    }catch(e){console.log('eniro fel:',e.message);}
+  }
+  return null;
 }
-
 /* hämta en URL via CORS-proxy med timeout */
 async function fetchVia(url,ms){
   const res=await Promise.race([
