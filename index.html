@@ -128,6 +128,10 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
 .success-card .amt{font-size:34px;font-weight:500;color:#fff;margin-top:16px;}
 .success-card .dots{position:absolute;right:20px;bottom:22px;color:#8B95A6;font-size:24px;letter-spacing:2px;}
 .success-msg{font-size:17px;color:#C4CDD6;margin-top:22px;}
+/* REFERENS */
+.ref-row{margin-top:22px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ref-row .ref-lbl{font-size:16px;color:#8B95A6;}
+.ref-row .ref-val{font-size:17px;color:#fff;font-weight:500;letter-spacing:.5px;}
 .success-footer{margin-top:auto;padding:24px 24px 28px;display:flex;align-items:center;justify-content:space-between;position:relative;}
 .x-circle{width:58px;height:58px;border-radius:50%;background:#1E2B3B;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto;}
 .x-circle svg{width:26px;height:26px;fill:#fff;}
@@ -254,6 +258,10 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
         <div class="dots">•••</div>
       </div>
       <div class="success-msg" id="successMsg">Pengar för maten</div>
+      <div class="ref-row" id="successRef" style="display:none;">
+        <span class="ref-lbl">Referens</span>
+        <span class="ref-val" id="refVal"></span>
+      </div>
     </div>
     <div class="success-footer">
       <img src="swishlogga2.png" class="receipt-logo" alt="Logga">
@@ -283,7 +291,7 @@ const phoneBook={
   '0768762522':{name:'Melker Lindström Röst',short:'Mele'},
   '0701234567':{name:'Signalen',short:'Signalen'},
   '0737710007':{name:'Amar Ezeldeen',short:'Amar'},
-  '1231480128':{name:'ALAN AL-BAYATI',short:'Najla livs'},
+  '1231480128':{name:'ALAN AL-BAYATI',short:'Najla livs',ref:'1834 8037 60'},
   '0701112233':{name:'Karl Andersson',short:'Karl'}
 };
 
@@ -307,13 +315,13 @@ function onRecvInput(){
     document.getElementById('recvName').textContent=p.short;
     document.getElementById('recvSub').textContent=intl(digits);
     match.classList.add('show');
-    recipient={name:p.name,short:p.short,phone:intl(digits)};
+    recipient={name:p.name,short:p.short,phone:intl(digits),ref:p.ref};
   } else if(digits.length>=6){
     document.getElementById('recvAv').textContent='?';
     document.getElementById('recvName').textContent='Okänd mottagare';
     document.getElementById('recvSub').textContent=intl(digits);
     match.classList.add('show');
-    recipient={name:'Okänd mottagare',short:'Okänd',phone:intl(digits)};
+    recipient={name:'Okänd mottagare',short:'Okänd',phone:intl(digits),ref:null};
   } else {match.classList.remove('show');recipient=null;}
 }
 
@@ -350,6 +358,14 @@ function completePayment(){
   document.getElementById('successAmt').textContent=belopp;
   document.getElementById('successMsg').textContent=msg;
   document.getElementById('successMsg').style.display=msg?'block':'none';
+  /* Referens – visas bara om mottagaren har en referens (t.ex. ALAN AL-BAYATI) */
+  const refRow=document.getElementById('successRef');
+  if(recipient.ref){
+    document.getElementById('refVal').textContent=recipient.ref;
+    refRow.style.display='flex';
+  } else {
+    refRow.style.display='none';
+  }
   go('successScreen');playSwishSound();burstCenter();makeSparkles();
 }
 function makeSparkles(){
@@ -400,6 +416,6 @@ function simulateScan(){onScanned('swish://pay?phone=0768762522');}
 document.addEventListener('click',()=>{getCtx().resume&&getCtx().resume();},{once:true});
 </script>
 <audio id="swishSound" src="swishljud.mp3" preload="auto"></audio>
-<audio id="plingSound" src="pling.mp3" preload="auto"></audio>
+<audio id="swishSound" src="pling.mp3" preload="auto"></audio>
 </body>
 </html>
