@@ -318,20 +318,42 @@ function extractFromQr(data){
   return {number,name};
 }
 
-/* 3) sista utväg: slå upp namn online (kräver internet, best-effort) */
+/* hämta en URL via CORS-proxy med timeout */
+async function fetchVia(url,ms){
+  const res=await Promise.race([
+    fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url)),
+    new Promise((_,rej)=>setTimeout(()=>rej('timeout'),ms||6000))
+  ]);
+  if(!res.ok)throw new Error('http '+res.status);
+  return res.text();
+}
+/* gräv fram ett namnliknande fält ur strukturerad data */
+function deepFindName(obj,depth){
+  depth=depth||0;
+  if(depth>8||!obj||typeof obj!=='object')return null;
+  for(const k of ['displayName','fullName','name','title']){
+    const v=obj[k];
+    if(typeof v==='string'&&v.length>=2&&v.length<=60&&/[A-Za-zÅÄÖåäö]/.test(v)&&!/^\d/.test(v))return v.trim();
+  }
+  for(const key in obj){const r=deepFindName(obj[key],depth+1);if(r)return r;}
+  return null;
+}
 async function lookupOnline(digits){
   if(!digits)return null;
-  const target='https://www.hitta.se/sök?vad='+encodeURIComponent(digits);
   try{
-    const res=await Promise.race([
-      fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(target)),
-      new Promise((_,rej)=>setTimeout(()=>rej('timeout'),4000))
-    ]);
-    const html=await res.text();
-    const m=html.match(/<h[23][^>]*>([^<]{2,50})<\/h[23]>/)
-          ||html.match(/"name"\s*:\s*"([^"]{2,50})"/);
-    if(m&&m[1])return m[1].replace(/\s+/g,' ').trim();
-  }catch(e){}
+    const html=await fetchVia('https://www.hitta.se/sök?vad='+encodeURIComponent(digits),6000);
+    // 1) strukturerad data
+    const nd=html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+    if(nd){try{const n=deepFindName(JSON.parse(nd[1]));if(n){console.log('hitta:',n);return n;}}catch(e){}}
+    // 2) rubrik/regex
+    const m=html.match(/<h[23][^>]*>\s*([^<]{2,60}?)\s*<\/h[23]>/)||html.match(/"displayName"\s*:\s*"([^"]{2,60})"/);
+    if(m&&m[1]){console.log('hitta regex:',m[1]);return m[1].trim();}
+  }catch(e){console.log('hitta fel:',e.message);}
+  try{
+    const html=await fetchVia('https://www.eniro.se/sök?q='+encodeURIComponent(digits),6000);
+    const m=html.match(/<h[23][^>]*>\s*([^<]{2,60}?)\s*<\/h[23]>/)||html.match(/"name"\s*:\s*"([^"]{2,60})"/);
+    if(m&&m[1]){console.log('eniro:',m[1]);return m[1].trim();}
+  }catch(e){console.log('eniro fel:',e.message);}
   return null;
 }
 
