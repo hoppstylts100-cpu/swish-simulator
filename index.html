@@ -121,6 +121,10 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
   80%{opacity:var(--op1);}
   100%{transform:translate(var(--dx),var(--dy)) scale(var(--sc));opacity:0;}
 }
+/* 9 osynliga tryckzoner i det gröna – top-left ... bottom-right */
+.green-grid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);z-index:3;}
+.green-cell{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s;}
+.green-cell:active{background:rgba(255,255,255,.12);}
 .success-body{padding:26px 20px 0;text-align:center;display:flex;flex-direction:column;}
 .success-date{font-size:16px;color:#8B95A6;}
 .success-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;margin-top:18px;text-align:left;position:relative;}
@@ -178,8 +182,8 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
     <div class="bottom-nav">
       <div class="nav-item active" onclick="setNav(this)"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Hem</div>
       <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20z"/></svg>Tillsammans</div>
-      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="5.0"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2" stroke-linecap="round"/></svg><span class="badge">19</span>Historik</div>
-      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="5.0"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 19c.7-3 3.3-5 6.5-5s5.8 2 6.5 5" stroke-linecap="round"/></svg>Profil</div>
+      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2" stroke-linecap="round"/></svg><span class="badge">19</span>Historik</div>
+      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 19c.7-3 3.3-5 6.5-5s5.8 2 6.5 5" stroke-linecap="round"/></svg>Profil</div>
     </div>
   </section>
 
@@ -246,6 +250,7 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
   <!-- SUCCESS -->
   <section class="screen" id="successScreen" onclick="onSuccessTap(event)">
     <div class="success-top">
+      <div class="green-grid" id="greenGrid"></div>
       <div class="check-wrap">
         <svg viewBox="0 0 100 100">
           <circle cx="50" cy="53" r="30" fill="none" stroke="#ffffff" stroke-width="3.0" opacity=".50"/>
@@ -290,6 +295,23 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
 <canvas id="scanCanvas" style="display:none;"></canvas>
 
 <script>
+/* ============================================================
+   9 TONER I DET GRÖNA PÅ KVITTOT
+   Skriv bara mp3-filnamnet för varje ruta. Positionen står först.
+   Rutnätet är 3x3: top-left = uppe till vänster, bottom-right = nere till höger.
+   ============================================================ */
+const greenTones = [
+  { pos:'top-left',      file:'Top left.mp3' },
+  { pos:'top-center',    file:'middle top.mp3' },
+  { pos:'top-right',     file:'top right.mp3' },
+  { pos:'middle-left',   file:'middle left.mp3' },
+  { pos:'center',        file:'middle.mp3' },
+  { pos:'middle-right',  file:'middle right.mp3' },
+  { pos:'bottom-left',   file:'bottom left.mp3' },
+  { pos:'bottom-center', file:'bottom middle.mp3' },
+  { pos:'bottom-right',  file:'bottom right.mp3' }
+];
+
 /* hämta via CORS-proxy, prova flera */
 async function fetchVia(url,ms){
   const proxies=['https://api.allorigins.win/raw?url=','https://corsproxy.io/?url='];
@@ -343,10 +365,8 @@ async function lookupOnline(digits){
   if(!digits)return null;
   try{
     const html=await fetchVia('https://www.hitta.se/sök?vad='+encodeURIComponent(digits),6000);
-    // 1) strukturerad data
     const nd=html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
     if(nd){try{const n=deepFindName(JSON.parse(nd[1]));if(n){console.log('hitta:',n);return n;}}catch(e){}}
-    // 2) rubrik/regex
     const m=html.match(/<h[23][^>]*>\s*([^<]{2,60}?)\s*<\/h[23]>/)||html.match(/"displayName"\s*:\s*"([^"]{2,60})"/);
     if(m&&m[1]){console.log('hitta regex:',m[1]);return m[1].trim();}
   }catch(e){console.log('hitta fel:',e.message);}
@@ -370,6 +390,32 @@ const phoneBook={
   '0701112233':{name:'Karl Andersson',short:'Karl'}
 };
 
+/* ---------- 9 TONER – bygg rutnätet och spela mp3 ---------- */
+const toneAudios={};
+function playTone(file){
+  if(!file)return;
+  let a=toneAudios[file];
+  if(!a){a=new Audio(file);a.preload='auto';toneAudios[file]=a;}
+  a.currentTime=0;
+  a.play().catch(err=>console.error('Kunde inte spela '+file,err));
+}
+function buildGreenGrid(){
+  const grid=document.getElementById('greenGrid');
+  if(!grid||grid.children.length)return;
+  greenTones.forEach(t=>{
+    const cell=document.createElement('div');
+    cell.className='green-cell';
+    cell.dataset.pos=t.pos;              /* t.ex. data-pos="top-right" */
+    cell.onclick=(e)=>{
+      e.stopPropagation();               /* så att pop-ljudet inte dubbeltäcker */
+      playTone(t.file);
+      const r=document.getElementById('successScreen').getBoundingClientRect();
+      spawnGlitter(e.clientX-r.left,e.clientY-r.top);
+    };
+    grid.appendChild(cell);
+  });
+}
+
 function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function setNav(el){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');}
 function setTab(el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');}
@@ -380,7 +426,6 @@ function focusRecv(){document.getElementById('recvInput').focus();}
 function formatPhone(d){d=d.replace(/\D/g,'').slice(0,10);if(d.length<=3)return d;if(d.length<=6)return d.slice(0,3)+' '+d.slice(3);if(d.length<=8)return d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6);return d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6,8)+' '+d.slice(8,10);}
 function intl(d){return '+46 '+formatPhone(d).replace(/^0/,'');}
 function phoneFmt(digits,p){return (p&&p.noCountry)?formatPhone(digits):intl(digits);}
-/* robust: hittar referens även om numret skrivs med inledande nolla eller annan längd */
 function refFor(digits,p){if(p&&p.ref)return p.ref;const norm=digits.replace(/^0/,'');if(norm.startsWith(REF_MATCH)||digits.startsWith(REF_MATCH))return REF_VALUE;return null;}
 function onRecvInput(){
   const inp=document.getElementById('recvInput');
@@ -437,7 +482,6 @@ function completePayment(){
   document.getElementById('successAmt').textContent=belopp;
   document.getElementById('successMsg').textContent=msg;
   document.getElementById('successMsg').style.display=msg?'block':'none';
-  /* Referens + dölj loggan – visas bara om mottagaren har en referens (t.ex. ALAN AL-BAYATI) */
   const scr=document.getElementById('successScreen');
   if(recipient.ref){
     document.getElementById('refVal').textContent=recipient.ref;
@@ -458,7 +502,6 @@ function makeSparkles(){
     s.style.height=sz+'px';
     s.style.left=(Math.random()*90+5)+'%';
     s.style.top=(Math.random()*100)+'%';
-    /* rör sig snabbt uppåt, lite i sidled – som i riktiga Swish */
     s.style.setProperty('--dx',((Math.random()-0.5)*30).toFixed(1)+'px');
     s.style.setProperty('--dy',(-(Math.random()*70+60)).toFixed(1)+'px');
     s.style.setProperty('--sc',(Math.random()*0.6+0.9).toFixed(2));
@@ -489,21 +532,16 @@ function stopScan(){scanning=false;if(stream){stream.getTracks().forEach(t=>t.st
 async function onScanned(data){
   stopScan();
   document.getElementById('scanHint').textContent='Söker mottagare...';
-
   const {number,name:qrName}=extractFromQr(data);
   const digits=normalizeDigits(number)||normalizeDigits(data);
   let person=phoneBook[digits];
   let displayName=(person&&person.name)||qrName||'';
-
-  /* hittades inget lokalt? prova online */
   if(!displayName&&digits){
     const on=await lookupOnline(digits);
     if(on)displayName=on;
   }
-
   const key=digits||'0768762522';
   if(displayName&&!phoneBook[key])phoneBook[key]={name:displayName,short:displayName};
-
   document.getElementById('recvInput').value=formatPhone(key);
   onRecvInput();
   const shown=(phoneBook[key]&&phoneBook[key].name)||displayName||'Okänd mottagare';
@@ -512,6 +550,7 @@ async function onScanned(data){
 }
 function simulateScan(){onScanned('swish://pay?phone=0768762522');}
 document.addEventListener('click',()=>{getCtx().resume&&getCtx().resume();},{once:true});
+buildGreenGrid();
 </script>
 <audio id="swishSound" src="swishljud.mp3" preload="auto"></audio>
 <audio id="plingSound" src="pling.mp3" preload="auto"></audio>
