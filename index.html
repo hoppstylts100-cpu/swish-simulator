@@ -407,12 +407,11 @@ function buildGreenGrid(){
     cell.className='green-cell';
     cell.dataset.pos=t.pos;              /* t.ex. data-pos="top-right" */
     cell.onclick=(e)=>{
-      e.stopPropagation();               /* så att pop-ljudet inte dubbeltäcker */
-      playTone(t.file);
-      const r=document.getElementById('successScreen').getBoundingClientRect();
-      spawnGlitter(e.clientX-r.left,e.clientY-r.top);
-    };
-    grid.appendChild(cell);
+  e.stopPropagation();               /* så att pop-ljudet inte dubbeltäcker */
+  playTone(t.file);
+  const r=document.getElementById('successScreen').getBoundingClientRect();
+  spawnGlitter(e.clientX-r.left,e.clientY-r.top);
+};
   });
 }
 
