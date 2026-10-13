@@ -57,6 +57,15 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
 .tab.active{color:#fff;}
 .tab.active::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:-6px;width:120%;height:3px;background:var(--blue-light);border-radius:3px;}
 
+/* PROFILE */
+.profile-content{padding:24px 20px;display:flex;flex-direction:column;gap:16px;}
+.profile-heading{font-size:24px;font-weight:700;color:#fff;}
+.profile-note{font-size:14px;color:var(--gray);line-height:1.5;}
+.profile-field{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;}
+.profile-field label{font-size:14px;color:var(--gray);}
+.profile-field input{width:100%;background:transparent;border:0;outline:none;color:#fff;font-size:18px;padding:4px 0;}
+.profile-save{background:var(--blue);color:#fff;border:0;border-radius:14px;padding:16px;font-size:17px;font-weight:600;cursor:pointer;}
+.profile-status{font-size:14px;color:#5FC98A;min-height:20px;}
 /* FORM */
 .form-area{flex:1;padding:22px 20px;display:flex;flex-direction:column;gap:14px;}
 .field{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 18px;transition:border-color .15s;}
@@ -182,7 +191,30 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
       <div class="nav-item active" onclick="setNav(this)"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Hem</div>
       <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20z"/></svg>Tillsammans</div>
       <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2" stroke-linecap="round"/></svg><span class="badge">19</span>Historik</div>
-      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 19c.7-3 3.3-5 6.5-5s5.8 2 6.5 5" stroke-linecap="round"/></svg>Profil</div>
+      <div class="nav-item" onclick="openProfile(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 19c.7-3 3.3-5 6.5-5s5.8 2 6.5 5" stroke-linecap="round"/></svg>Profil</div>
+    </div>
+  </section>
+
+  <!-- PROFIL -->
+  <section class="screen" id="profileScreen">
+    <div class="top-bar">
+      <div class="icon-circle" onclick="go('homeScreen')"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg></div>
+      <div style="color:#fff;font-size:19px;font-weight:600;">Profil</div>
+      <div style="width:46px;"></div>
+    </div>
+    <div class="profile-content">
+      <div class="profile-heading">Dina uppgifter</div>
+      <div class="profile-note">Ändra namnet och telefonnumret som visas för din profil på den här enheten.</div>
+      <div class="profile-field">
+        <label for="ownName">Ditt namn</label>
+        <input id="ownName" type="text" autocomplete="name" placeholder="För- och efternamn">
+      </div>
+      <div class="profile-field">
+        <label for="ownPhone">Ditt telefonnummer</label>
+        <input id="ownPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="070 123 45 67">
+      </div>
+      <button class="profile-save" onclick="saveProfile()">Spara ändringar</button>
+      <div class="profile-status" id="profileStatus" aria-live="polite"></div>
     </div>
   </section>
 
@@ -416,7 +448,30 @@ function buildGreenGrid(){
 }
 
 function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
 function setNav(el){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');}
+const DEFAULT_PROFILE={name:'ASTOR HALLÉN SEKANDER',phone:''};
+function readProfile(){
+  try{return {...DEFAULT_PROFILE,...JSON.parse(localStorage.getItem('swishDemoProfile')||'{}')};}
+  catch(e){return {...DEFAULT_PROFILE};}
+}
+function openProfile(el){
+  if(el)setNav(el);
+  const profile=readProfile();
+  document.getElementById('ownName').value=profile.name||'';
+  document.getElementById('ownPhone').value=profile.phone||'';
+  document.getElementById('profileStatus').textContent='';
+  go('profileScreen');
+}
+function saveProfile(){
+  const name=document.getElementById('ownName').value.trim();
+  const phone=document.getElementById('ownPhone').value.trim();
+  if(!name){document.getElementById('profileStatus').textContent='Fyll i ditt namn.';return;}
+  try{localStorage.setItem('swishDemoProfile',JSON.stringify({name,phone}));}
+  catch(e){document.getElementById('profileStatus').textContent='Kunde inte spara på den här enheten.';return;}
+  document.querySelector('.sign-h1').textContent=name;
+  document.getElementById('profileStatus').textContent='Ändringarna har sparats på den här enheten.';
+}
 function setTab(el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');}
 function toggleCard(el){el.style.opacity=el.style.opacity==='.5'?'1':'.5';}
 function focusRecv(){document.getElementById('recvInput').focus();}
@@ -550,8 +605,9 @@ async function onScanned(data){
 function simulateScan(){onScanned('swish://pay?phone=0768762522');}
 document.addEventListener('click',()=>{getCtx().resume&&getCtx().resume();},{once:true});
 buildGreenGrid();
+document.querySelector(".sign-h1").textContent=readProfile().name;
 </script>
 <audio id="swishSound" src="swishljud.mp3" preload="auto"></audio>
 <audio id="plingSound" src="pling.mp3" preload="auto"></audio>
 </body>
-</html>
+</html> gör så att profil fliken funkar och där kan man ändra sitt eget namnoch telefon nr
