@@ -57,15 +57,6 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
 .tab.active{color:#fff;}
 .tab.active::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:-6px;width:120%;height:3px;background:var(--blue-light);border-radius:3px;}
 
-/* PROFILE */
-.profile-content{padding:24px 20px;display:flex;flex-direction:column;gap:16px;}
-.profile-heading{font-size:24px;font-weight:700;color:#fff;}
-.profile-note{font-size:14px;color:var(--gray);line-height:1.5;}
-.profile-field{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;}
-.profile-field label{font-size:14px;color:var(--gray);}
-.profile-field input{width:100%;background:transparent;border:0;outline:none;color:#fff;font-size:18px;padding:4px 0;}
-.profile-save{background:var(--blue);color:#fff;border:0;border-radius:14px;padding:16px;font-size:17px;font-weight:600;cursor:pointer;}
-.profile-status{font-size:14px;color:#5FC98A;min-height:20px;}
 /* FORM */
 .form-area{flex:1;padding:22px 20px;display:flex;flex-direction:column;gap:14px;}
 .field{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 18px;transition:border-color .15s;}
@@ -91,6 +82,13 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
 .btn-swisha{background:var(--blue);color:#fff;border:none;padding:18px;border-radius:14px;font-size:20px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:14px;position:relative;margin-top:auto;}
 .btn-swisha:active{background:#2569bd;}
 .btn-swisha .bankid{margin-left:auto;display:flex;align-items:center;}
+
+/* PROFIL */
+.prof-hero{display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px 0 8px;}
+.prof-avatar{width:104px;height:104px;border-radius:50%;background:var(--green-dark);display:flex;align-items:center;justify-content:center;color:#5FC98A;font-size:44px;font-weight:700;text-transform:uppercase;}
+.prof-avatar-name{font-size:22px;font-weight:600;color:#fff;}
+.prof-avatar-phone{font-size:15px;color:#8B95A6;}
+.prof-section{font-size:13px;font-weight:600;color:#7E93B0;letter-spacing:.6px;margin:6px 4px -4px;}
 
 /* SIGN */
 #signScreen{background:var(--bg2);}
@@ -166,6 +164,10 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
 @keyframes scanmove{0%{top:0}50%{top:100%}100%{top:0}}
 .scan-hint{position:absolute;bottom:36px;left:0;right:0;text-align:center;color:#fff;font-size:15px;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,.6);}
 .btn-simulate{position:absolute;bottom:82px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);color:#12202B;border:none;padding:11px 24px;border-radius:22px;font-size:14px;font-weight:700;cursor:pointer;}
+
+/* TOAST */
+.toast{position:fixed;left:50%;bottom:110px;transform:translate(-50%,20px);background:#1E2B3B;border:1px solid var(--border);color:#fff;padding:12px 22px;border-radius:14px;font-size:15px;font-weight:500;opacity:0;pointer-events:none;transition:all .25s ease;z-index:99;}
+.toast.show{opacity:1;transform:translate(-50%,0);}
 </style>
 </head>
 <body>
@@ -188,33 +190,10 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
       <button class="btn-secondary" onclick="startScan()">Skanna <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 19h2v2h-2zm-6 0h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm-4 0h2v2h-2zm-4 4h2v2h-2zm2-2h2v2h-2zm2 4h2v2h-2z"/></svg></button>
     </div>
     <div class="bottom-nav">
-      <div class="nav-item active" onclick="setNav(this)"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Hem</div>
-      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20z"/></svg>Tillsammans</div>
-      <div class="nav-item" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2" stroke-linecap="round"/></svg><span class="badge">19</span>Historik</div>
-      <div class="nav-item" onclick="openProfile(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 19c.7-3 3.3-5 6.5-5s5.8 2 6.5 5" stroke-linecap="round"/></svg>Profil</div>
-    </div>
-  </section>
-
-  <!-- PROFIL -->
-  <section class="screen" id="profileScreen">
-    <div class="top-bar">
-      <div class="icon-circle" onclick="go('homeScreen')"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg></div>
-      <div style="color:#fff;font-size:19px;font-weight:600;">Profil</div>
-      <div style="width:46px;"></div>
-    </div>
-    <div class="profile-content">
-      <div class="profile-heading">Dina uppgifter</div>
-      <div class="profile-note">Ändra namnet och telefonnumret som visas för din profil på den här enheten.</div>
-      <div class="profile-field">
-        <label for="ownName">Ditt namn</label>
-        <input id="ownName" type="text" autocomplete="name" placeholder="För- och efternamn">
-      </div>
-      <div class="profile-field">
-        <label for="ownPhone">Ditt telefonnummer</label>
-        <input id="ownPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="070 123 45 67">
-      </div>
-      <button class="profile-save" onclick="saveProfile()">Spara ändringar</button>
-      <div class="profile-status" id="profileStatus" aria-live="polite"></div>
+      <div class="nav-item active" data-nav="hem" onclick="navTo('homeScreen',this)"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Hem</div>
+      <div class="nav-item" data-nav="tillsammans" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20z"/></svg>Tillsammans</div>
+      <div class="nav-item" data-nav="historik" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2" stroke-linecap="round"/></svg><span class="badge">19</span>Historik</div>
+      <div class="nav-item" data-nav="profil" onclick="navTo('profileScreen',this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 19c.7-3 3.3-5 6.5-5s5.8 2 6.5 5" stroke-linecap="round"/></svg>Profil</div>
     </div>
   </section>
 
@@ -253,6 +232,38 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
     </div>
   </section>
 
+  <!-- PROFIL -->
+  <section class="screen" id="profileScreen">
+    <div class="top-bar">
+      <div class="icon-circle" onclick="navTo('homeScreen')"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg></div>
+      <div class="sign-title">PROFIL</div>
+      <div style="width:46px"></div>
+    </div>
+    <div class="form-area">
+      <div class="prof-hero">
+        <div class="prof-avatar" id="profAvatar">?</div>
+        <div class="prof-avatar-name" id="profHeroName">Inget namn</div>
+        <div class="prof-avatar-phone" id="profHeroPhone">Inget nummer</div>
+      </div>
+      <div class="prof-section">DINA UPPGIFTER</div>
+      <div class="field" id="profNameField">
+        <div class="f-label">Namn</div>
+        <input id="profName" placeholder="För- och efternamn" oninput="renderProfile()" onfocus="profNameField.classList.add('focus')" onblur="profNameField.classList.remove('focus')">
+      </div>
+      <div class="field" id="profPhoneField">
+        <div class="f-label">Mobilnummer</div>
+        <input id="profPhone" inputmode="numeric" placeholder="07..." oninput="onProfPhone()" onfocus="profPhoneField.classList.add('focus')" onblur="profPhoneField.classList.remove('focus')">
+      </div>
+      <button class="btn-primary prof-save" style="flex:none;margin-top:auto" onclick="saveProfile()">Spara uppgifter</button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" data-nav="hem" onclick="navTo('homeScreen',this)"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Hem</div>
+      <div class="nav-item" data-nav="tillsammans" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20z"/></svg>Tillsammans</div>
+      <div class="nav-item" data-nav="historik" onclick="setNav(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2" stroke-linecap="round"/></svg><span class="badge">19</span>Historik</div>
+      <div class="nav-item active" data-nav="profil" onclick="navTo('profileScreen',this)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.0"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 19c.7-3 3.3-5 6.5-5s5.8 2 6.5 5" stroke-linecap="round"/></svg>Profil</div>
+    </div>
+  </section>
+
   <!-- SIGN -->
   <section class="screen" id="signScreen">
     <div class="sign-top">
@@ -261,7 +272,7 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
       <svg width="52" height="26" viewBox="0 0 52 26"><text x="0" y="17" fill="#fff" font-size="16" font-weight="700" font-style="italic" font-family="Inter">iD</text><text x="18" y="24" fill="#fff" font-size="8" font-weight="600" font-family="Inter">BankID</text></svg>
     </div>
     <div class="sign-body">
-      <div class="sign-h1">ASTOR HALLÉN SEKANDER</div>
+      <div class="sign-h1" id="signH1">ASTOR HALLÉN SEKANDER</div>
       <div class="sign-p">Jag skriver under hos:</div>
       <div class="sign-strong">Swedbank och Sparbankerna<br>avseende Swish</div>
       <div class="pen-circle"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></div>
@@ -324,12 +335,11 @@ body{background:var(--bg);display:flex;justify-content:center;min-height:100vh;m
   </section>
 </div>
 <canvas id="scanCanvas" style="display:none;"></canvas>
+<div class="toast" id="toast"></div>
 
 <script>
 /* ============================================================
    9 TONER I DET GRÖNA PÅ KVITTOT
-   Skriv bara mp3-filnamnet för varje ruta. Positionen står först.
-   Rutnätet är 3x3: top-left = uppe till vänster, bottom-right = nere till höger.
    ============================================================ */
 const greenTones = [
   { pos:'top-left',      file:'Top left.mp3' },
@@ -372,47 +382,11 @@ async function lookupOnline(digits){
   }
   return null;
 }
-/* hämta en URL via CORS-proxy med timeout */
-async function fetchVia(url,ms){
-  const res=await Promise.race([
-    fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url)),
-    new Promise((_,rej)=>setTimeout(()=>rej('timeout'),ms||6000))
-  ]);
-  if(!res.ok)throw new Error('http '+res.status);
-  return res.text();
-}
-/* gräv fram ett namnliknande fält ur strukturerad data */
-function deepFindName(obj,depth){
-  depth=depth||0;
-  if(depth>8||!obj||typeof obj!=='object')return null;
-  for(const k of ['displayName','fullName','name','title']){
-    const v=obj[k];
-    if(typeof v==='string'&&v.length>=2&&v.length<=60&&/[A-Za-zÅÄÖåäö]/.test(v)&&!/^\d/.test(v))return v.trim();
-  }
-  for(const key in obj){const r=deepFindName(obj[key],depth+1);if(r)return r;}
-  return null;
-}
-async function lookupOnline(digits){
-  if(!digits)return null;
-  try{
-    const html=await fetchVia('https://www.hitta.se/sök?vad='+encodeURIComponent(digits),6000);
-    const nd=html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-    if(nd){try{const n=deepFindName(JSON.parse(nd[1]));if(n){console.log('hitta:',n);return n;}}catch(e){}}
-    const m=html.match(/<h[23][^>]*>\s*([^<]{2,60}?)\s*<\/h[23]>/)||html.match(/"displayName"\s*:\s*"([^"]{2,60})"/);
-    if(m&&m[1]){console.log('hitta regex:',m[1]);return m[1].trim();}
-  }catch(e){console.log('hitta fel:',e.message);}
-  try{
-    const html=await fetchVia('https://www.eniro.se/sök?q='+encodeURIComponent(digits),6000);
-    const m=html.match(/<h[23][^>]*>\s*([^<]{2,60}?)\s*<\/h[23]>/)||html.match(/"name"\s*:\s*"([^"]{2,60})"/);
-    if(m&&m[1]){console.log('eniro:',m[1]);return m[1].trim();}
-  }catch(e){console.log('eniro fel:',e.message);}
-  return null;
-}
 
 /* STATE */
 let recipient=null;
-const REF_VALUE='1834 8037 60';           /* referensen som visas för ALAN */
-const REF_MATCH='123148012';              /* matchas mot numret (utan inledande nolla) */
+const REF_VALUE='1834 8037 60';
+const REF_MATCH='123148012';
 const phoneBook={
   '0768762522':{name:'Melker Lindström Röst',short:'Mele'},
   '0701234567':{name:'Signalen',short:'Signalen'},
@@ -420,6 +394,52 @@ const phoneBook={
   '1231480128':{name:'ALAN AL-BAYATI',short:'Najla livs',ref:REF_VALUE,noCountry:true},
   '0701112233':{name:'Karl Andersson',short:'Karl'}
 };
+
+/* ---------- MIN PROFIL (sparas lokalt) ---------- */
+let profile={name:'',phone:''};
+function loadProfile(){
+  try{const s=localStorage.getItem('swishProfile');if(s)profile=JSON.parse(s)||profile;}catch(e){}
+  const nameEl=document.getElementById('profName');
+  const phoneEl=document.getElementById('profPhone');
+  if(nameEl)nameEl.value=profile.name||'';
+  if(phoneEl)phoneEl.value=profile.phone?formatPhone(profile.phone):'';
+  renderProfile();
+}
+function renderProfile(){
+  const nameEl=document.getElementById('profName');
+  const phoneEl=document.getElementById('profPhone');
+  const name=nameEl?nameEl.value.trim():profile.name;
+  const phone=phoneEl?phoneEl.value.replace(/\D/g,''):profile.phone;
+  const initial=name?(name[0]||'?'):'?';
+  const av=document.getElementById('profAvatar');
+  const hn=document.getElementById('profHeroName');
+  const hp=document.getElementById('profHeroPhone');
+  if(av)av.textContent=initial;
+  if(hn)hn.textContent=name||'Inget namn';
+  if(hp)hp.textContent=phone?formatPhone(phone):'Inget nummer';
+  const h1=document.getElementById('signH1');
+  if(h1)h1.textContent=name?name.toUpperCase():'DIN SIGNATUR';
+}
+function onProfPhone(){
+  const inp=document.getElementById('profPhone');
+  inp.value=formatPhone(inp.value);
+  renderProfile();
+}
+function saveProfile(){
+  const name=document.getElementById('profName').value.trim();
+  const phone=document.getElementById('profPhone').value.replace(/\D/g,'');
+  profile={name,phone};
+  try{localStorage.setItem('swishProfile',JSON.stringify(profile));}catch(e){}
+  renderProfile();
+  toast('Profilen sparad');
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),1800);
+}
 
 /* ---------- 9 TONER – bygg rutnätet och spela mp3 ---------- */
 const toneAudios={};
@@ -436,41 +456,26 @@ function buildGreenGrid(){
   greenTones.forEach(t=>{
     const cell=document.createElement('div');
     cell.className='green-cell';
-    cell.dataset.pos=t.pos;              /* t.ex. data-pos="top-right" */
+    cell.dataset.pos=t.pos;
     cell.onclick=(e)=>{
-      e.stopPropagation();               /* så att pop-ljudet inte dubbeltäcker */
+      e.stopPropagation();
       playTone(t.file);
       const r=document.getElementById('successScreen').getBoundingClientRect();
       spawnGlitter(e.clientX-r.left,e.clientY-r.top);
     };
-    grid.appendChild(cell);              /* <-- DENNA saknades */
+    grid.appendChild(cell);
   });
 }
 
 function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
-
-function setNav(el){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');}
-const DEFAULT_PROFILE={name:'ASTOR HALLÉN SEKANDER',phone:''};
-function readProfile(){
-  try{return {...DEFAULT_PROFILE,...JSON.parse(localStorage.getItem('swishDemoProfile')||'{}')};}
-  catch(e){return {...DEFAULT_PROFILE};}
-}
-function openProfile(el){
-  if(el)setNav(el);
-  const profile=readProfile();
-  document.getElementById('ownName').value=profile.name||'';
-  document.getElementById('ownPhone').value=profile.phone||'';
-  document.getElementById('profileStatus').textContent='';
-  go('profileScreen');
-}
-function saveProfile(){
-  const name=document.getElementById('ownName').value.trim();
-  const phone=document.getElementById('ownPhone').value.trim();
-  if(!name){document.getElementById('profileStatus').textContent='Fyll i ditt namn.';return;}
-  try{localStorage.setItem('swishDemoProfile',JSON.stringify({name,phone}));}
-  catch(e){document.getElementById('profileStatus').textContent='Kunde inte spara på den här enheten.';return;}
-  document.querySelector('.sign-h1').textContent=name;
-  document.getElementById('profileStatus').textContent='Ändringarna har sparats på den här enheten.';
+function navTo(screen,el){if(el)setNav(el);go(screen);}
+function setNav(el){
+  const label=el&&el.dataset?el.dataset.nav:null;
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(label)n.classList.toggle('active',n.dataset.nav===label);
+    else n.classList.remove('active');
+  });
+  if(el&&!label)el.classList.add('active');
 }
 function setTab(el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');}
 function toggleCard(el){el.style.opacity=el.style.opacity==='.5'?'1':'.5';}
@@ -481,6 +486,32 @@ function formatPhone(d){d=d.replace(/\D/g,'').slice(0,10);if(d.length<=3)return 
 function intl(d){return '+46 '+formatPhone(d).replace(/^0/,'');}
 function phoneFmt(digits,p){return (p&&p.noCountry)?formatPhone(digits):intl(digits);}
 function refFor(digits,p){if(p&&p.ref)return p.ref;const norm=digits.replace(/^0/,'');if(norm.startsWith(REF_MATCH)||digits.startsWith(REF_MATCH))return REF_VALUE;return null;}
+function normalizeDigits(raw){
+  let d=String(raw||'').replace(/\D/g,'');
+  if(!d)return '';
+  if(d.startsWith('0046'))d='0'+d.slice(4);
+  else if(d.startsWith('46')&&d.length>=10)d='0'+d.slice(2);
+  return d;
+}
+function extractFromQr(data){
+  let number='',name='';
+  try{
+    const q=data.includes('?')?data.split('?')[1]:'';
+    const params=new URLSearchParams(q);
+    let payload=params.get('data')||'';
+    if(payload){
+      let json=null;
+      try{json=JSON.parse(payload);}catch(e){try{json=JSON.parse(decodeURIComponent(payload));}catch(_){}}
+      if(json){
+        number=(json.payee&&(json.payee.value||json.payee.alias))||json.payeeAlias||json.phone||'';
+        name=(json.payee&&json.payee.name)||json.payeeName||json.name||'';
+      }
+    }
+    if(!number)number=params.get('phone')||params.get('swish')||params.get('number')||'';
+  }catch(e){}
+  if(!number){const m=data.match(/(\+?\d[\d\s]{6,})/);if(m)number=m[1];}
+  return {number,name};
+}
 function onRecvInput(){
   const inp=document.getElementById('recvInput');
   inp.value=formatPhone(inp.value);
@@ -605,9 +636,9 @@ async function onScanned(data){
 function simulateScan(){onScanned('swish://pay?phone=0768762522');}
 document.addEventListener('click',()=>{getCtx().resume&&getCtx().resume();},{once:true});
 buildGreenGrid();
-document.querySelector(".sign-h1").textContent=readProfile().name;
+loadProfile();
 </script>
 <audio id="swishSound" src="swishljud.mp3" preload="auto"></audio>
 <audio id="plingSound" src="pling.mp3" preload="auto"></audio>
 </body>
-</html> gör så att profil fliken funkar och där kan man ändra sitt eget namnoch telefon nr
+</html>
